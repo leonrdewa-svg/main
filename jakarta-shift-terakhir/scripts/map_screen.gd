@@ -24,7 +24,7 @@ func _ready() -> void:
 		var a: Dictionary = Story.AREAS[id]
 		var open: bool = id == "dukuh" or Game.flag("prolog_done")
 		var label: String = Story.area_name(id)
-		if id == Game.area:
+		if id == Story.base_of(Game.area):
 			label += Game.L(" (di sini)", " (here)")
 		var done := _area_cleared(id)
 		if done:
@@ -42,7 +42,7 @@ func _ready() -> void:
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_theme_font_size_override("font_size", 20)
 	panel.add_child(info)
-	idx = maxi(0, options.find(Game.area))
+	idx = maxi(0, options.find(Story.base_of(Game.area)))
 	_show()
 	_active = true
 	Sfx.play("sfx_paper")
@@ -52,9 +52,11 @@ func _ready() -> void:
 
 
 func _area_cleared(id: String) -> bool:
-	for e in Story.AREAS[id].enemies:
-		if not Game.flag("def_" + e.id):
-			return false
+	for aid in [id, id + "2"]:
+		if Story.AREAS.has(aid):
+			for e in Story.AREAS[aid].enemies:
+				if not Game.flag("def_" + e.id):
+					return false
 	return true
 
 
@@ -85,11 +87,11 @@ func _show() -> void:
 		info.text = Game.L("[ ISTIRAHAT & SIMPAN ]\nHP party pulih penuh dan progres disimpan.  (Z pilih · X batal · panah ganti)", "[ REST & SAVE ]\nFully restores party HP and saves.  (Z select · X back · arrows switch)")
 	else:
 		pins[cur].scale = Vector2(1.35, 1.35)
-		var a: Dictionary = Story.AREAS[cur]
 		var left := 0
-		for e in a.enemies:
-			if not Game.flag("def_" + e.id):
-				left += 1
+		for aid in [cur, cur + "2"]:
+			for e in Story.AREAS[aid].enemies:
+				if not Game.flag("def_" + e.id):
+					left += 1
 		info.text = Game.L("Naik MRT ke %s\nPekerja dirasuki tersisa: %d   (Z naik · X batal · panah ganti)", "Take the MRT to %s\nPossessed workers left: %d   (Z ride · X back · arrows switch)") % [Story.area_name(cur), left]
 
 
@@ -139,6 +141,6 @@ func _auto() -> void:
 			break
 	if pick == "rest" and Game.cards() >= 3:
 		pick = "scbd"
-	if pick == Game.area and _area_cleared(pick):
+	if pick == Story.base_of(Game.area) and _area_cleared(pick):
 		pick = "rest"
 	_pick(pick)

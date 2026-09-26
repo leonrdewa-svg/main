@@ -26,21 +26,21 @@ const HEROES := {
 		"side": "res://assets/world/raka_side.png",
 		"faces": {"normal": "datar", "happy": "senyum", "focus": "marah", "hurt": "marah", "tired": "lelah"},
 		"skills": [
-			{"id": "tinju", "name": "Tinju Komuter", "ap": 2, "target": "enemy", "type": "combo", "kinds": ["tap", "tap", "hold", "tap"], "power": 1.0, "elem": "fisik", "lvl": 1,
-				"desc": "Rentetan 4 pukulan ke satu musuh. Combo sempurna = +1 AP."},
+			{"id": "tinju", "name": "Tebas Komuter", "ap": 2, "target": "enemy", "type": "combo", "kinds": ["tap", "tap", "hold", "tap"], "power": 1.0, "elem": "fisik", "lvl": 1, "anim": "raka_0",
+				"desc": "Tebasan payung beruntun 4 kali. Combo sempurna = +1 AP."},
 			{"id": "teriak", "name": "Teriak Jam Pulang", "ap": 1, "target": "none", "type": "buff", "lvl": 1,
 				"desc": "Party ATK +30% selama 2 giliran. Tanpa QTE."},
-			{"id": "putar", "name": "Tendangan Putar", "ap": 3, "target": "all_enemies", "type": "aoe", "kinds": ["tap", "mash", "tap"], "power": 0.9, "elem": "fisik", "lvl": 2,
+			{"id": "putar", "name": "Tendangan Putar", "ap": 3, "target": "all_enemies", "type": "aoe", "kinds": ["tap", "mash", "tap"], "power": 0.9, "elem": "fisik", "lvl": 2, "anim": "raka_3",
 				"desc": "Tendangan berputar ke SEMUA musuh."},
-			{"id": "upper", "name": "Uppercut Deadline", "ap": 3, "target": "enemy", "type": "combo", "kinds": ["hold"], "power": 2.6, "elem": "api", "lvl": 3,
-				"desc": "Satu uppercut berapi super kuat. TAHAN Z lalu lepas di hijau. Elemen API."},
-			{"id": "salto", "name": "Salto Ojol", "ap": 3, "target": "none", "type": "random", "kinds": ["tap", "tap", "tap", "tap", "tap"], "power": 0.75, "elem": "fisik", "lvl": 4,
-				"desc": "5 tendangan salto ke musuh acak. Cepat dan beruntun!"},
+			{"id": "upper", "name": "Tusuk Deadline", "ap": 3, "target": "enemy", "type": "combo", "kinds": ["hold"], "power": 2.6, "elem": "api", "lvl": 3, "anim": "raka_1",
+				"desc": "Satu tusukan payung berapi super kuat. TAHAN Z lalu lepas di hijau. Elemen API."},
+			{"id": "salto", "name": "Pulang Tepat Waktu", "ap": 3, "target": "none", "type": "random", "kinds": ["tap", "tap", "tap", "tap", "tap"], "power": 0.75, "elem": "fisik", "lvl": 4, "anim": "raka_3",
+				"desc": "5 terjangan kilat ke musuh acak. Cepat dan beruntun!"},
 			{"id": "tubruk", "name": "Kopi Tubruk", "ap": 2, "target": "none", "type": "self", "lvl": 5,
 				"desc": "Seruput kopi: Raka pulih 30% HP dan Tara dapat +2 AP."},
-			{"id": "rapat", "name": "Tinju Rapat Darurat", "ap": 4, "target": "all_enemies", "type": "aoe", "kinds": ["mash", "tap", "mash"], "power": 1.3, "elem": "listrik", "lvl": 6,
-				"desc": "Pukulan bermuatan listrik ke SEMUA musuh. Elemen LISTRIK."},
-			{"id": "payung", "name": "Payung Badai", "ap": 5, "target": "all_enemies", "type": "aoe", "kinds": ["hold", "mash", "tap", "tap"], "power": 1.7, "elem": "listrik", "lvl": 8,
+			{"id": "pelindung", "name": "Payung Pelindung", "ap": 2, "target": "none", "type": "guard", "kinds": ["hold"], "lvl": 6, "anim": "raka_2",
+				"desc": "Buka payung: damage ke party -50% selama 2 giliran. QTE sempurna = 3 giliran."},
+			{"id": "payung", "name": "Payung Badai", "ap": 5, "target": "all_enemies", "type": "aoe", "kinds": ["hold", "mash", "tap", "tap"], "power": 1.7, "elem": "listrik", "lvl": 8, "anim": "raka_2",
 				"desc": "Jurus pamungkas Raka: badai petir dari payung komuter!"},
 		],
 	},
@@ -51,21 +51,21 @@ const HEROES := {
 		"side": "res://assets/world/tara_side.png",
 		"faces": {"normal": "skeptis", "happy": "usil", "focus": "fokus", "hurt": "lelah", "tired": "lelah"},
 		"skills": [
-			{"id": "sapuan", "name": "Sapuan Kaki", "ap": 2, "target": "enemy", "type": "combo", "kinds": ["tap", "tap", "tap"], "power": 1.1, "elem": "fisik", "stun": true, "lvl": 1,
-				"desc": "Sapuan kaki rendah. Semua PERFECT = musuh pusing (lewat 1 giliran)."},
+			{"id": "sapuan", "name": "Sabet Revisi", "ap": 2, "target": "enemy", "type": "combo", "kinds": ["tap", "tap", "tap"], "power": 1.1, "elem": "fisik", "stun": true, "lvl": 1, "anim": "tara_0",
+				"desc": "Sabetan kipas beruntun. Semua PERFECT = musuh pusing (lewat 1 giliran)."},
 			{"id": "semangat", "name": "Semangat Pagi", "ap": 2, "target": "ally", "type": "heal", "kinds": ["tap", "hold"], "power": 0.3, "lvl": 1,
 				"desc": "Pulihkan HP satu teman (bisa bangkitkan). QTE bagus = pulih lebih banyak."},
-			{"id": "badai", "name": "Badai Dokumen", "ap": 3, "target": "all_enemies", "type": "aoe", "kinds": ["tap", "tap", "mash", "tap"], "power": 0.8, "elem": "kertas", "lvl": 2,
-				"desc": "Kipas dokumen ke SEMUA musuh. Elemen KERTAS."},
-			{"id": "stempel", "name": "Stempel Merah", "ap": 2, "target": "enemy", "type": "combo", "kinds": ["hold", "tap"], "power": 0.9, "elem": "kertas", "debuff": true, "lvl": 3,
-				"desc": "Cap 'DITOLAK'! ATK musuh -30% selama 3 giliran."},
-			{"id": "presentasi", "name": "Tendangan Presentasi", "ap": 3, "target": "enemy", "type": "combo", "kinds": ["tap", "tap", "hold"], "power": 1.4, "elem": "fisik", "bonus_stun": true, "lvl": 4,
-				"desc": "Tendangan beruntun. Damage x2 ke musuh yang sedang pusing!"},
+			{"id": "badai", "name": "Badai Berkas", "ap": 3, "target": "all_enemies", "type": "aoe", "kinds": ["tap", "tap", "mash", "tap"], "power": 0.8, "elem": "kertas", "lvl": 2, "anim": "tara_1",
+				"desc": "Pusaran berkas ke SEMUA musuh. Elemen KERTAS."},
+			{"id": "stempel", "name": "Staples Presisi", "ap": 2, "target": "enemy", "type": "combo", "kinds": ["hold", "tap", "tap"], "power": 0.9, "elem": "kertas", "debuff": true, "lvl": 3, "anim": "tara_3",
+				"desc": "Tembakan staples! ATK musuh -30% selama 3 giliran."},
+			{"id": "tameng", "name": "Tameng Dokumen", "ap": 2, "target": "none", "type": "guard", "kinds": ["tap", "hold"], "lvl": 4, "anim": "tara_2",
+				"desc": "Dinding dokumen: damage ke party -50% selama 2 giliran. QTE sempurna = 3 giliran."},
 			{"id": "rehat", "name": "Rehat Kopi", "ap": 3, "target": "party", "type": "heal_all", "kinds": ["mash"], "power": 0.25, "lvl": 5,
 				"desc": "Pulihkan HP seluruh party dan hapus panik."},
-			{"id": "api", "name": "Kipas Api", "ap": 3, "target": "all_enemies", "type": "aoe", "kinds": ["tap", "hold", "tap"], "power": 1.0, "elem": "api", "burn": true, "lvl": 6,
+			{"id": "api", "name": "Kipas Api", "ap": 3, "target": "all_enemies", "type": "aoe", "kinds": ["tap", "hold", "tap"], "power": 1.0, "elem": "api", "burn": true, "lvl": 6, "anim": "tara_1",
 				"desc": "Kipas berapi ke SEMUA musuh + terbakar 2 giliran. Elemen API."},
-			{"id": "cap", "name": "Cap Lembur Balik", "ap": 4, "target": "enemy", "type": "combo", "kinds": ["tap", "tap", "mash", "tap", "hold"], "power": 1.5, "elem": "listrik", "stun": true, "lvl": 7,
+			{"id": "cap", "name": "Cap Lembur Balik", "ap": 4, "target": "enemy", "type": "combo", "kinds": ["tap", "tap", "mash", "tap", "hold"], "power": 1.5, "elem": "listrik", "stun": true, "lvl": 7, "anim": "tara_3",
 				"desc": "5 hit berlistrik. Semua PERFECT = musuh pusing. Elemen LISTRIK."},
 		],
 	},
@@ -73,12 +73,13 @@ const HEROES := {
 
 ## Serangan musuh: tiap serangan = daftar jeda antar hit (detik) + flag "berat"
 ## (hit merah: tidak bisa di-parry, harus DODGE).
+const M := "res://assets/mon/"
 const ENEMIES := {
 	"deadline": {"name": "Deadline", "hp": 60, "atk": 8, "spd": 11, "scale": 0.47, "color": Color("f07a1f"),
 		"sprite": "res://assets/sprites/deadline.png", "exp": 14, "money": 7000, "npc": "npc_deadline", "weak": "listrik",
 		"quote": "Waktu tidak pernah cukup.",
 		"moves": [
-			{"name": "Tusuk Jarum Jam", "hits": [0.7], "power": 1.0},
+			{"name": "Jarum Menit", "hits": [0.8, 0.35], "power": 0.7, "anim": "musa_0"},
 			{"name": "TIK-TAK-TIK", "hits": [0.6, 0.35, 0.35], "power": 0.5},
 			{"name": "Waktu Habis!", "hits": [1.1, 0.25], "power": 0.8, "heavy": [false, true]},
 		]},
@@ -87,7 +88,7 @@ const ENEMIES := {
 		"quote": "Masih ada yang bisa diperbaiki kok.",
 		"moves": [
 			{"name": "Coret Merah", "hits": [0.55, 0.45], "power": 0.6},
-			{"name": "Revisi Lagi :)", "hits": [0.9, 0.2, 0.2, 0.2], "power": 0.35},
+			{"name": "Hujan Koreksi", "hits": [0.9, 0.2, 0.2, 0.2], "power": 0.35, "anim": "musa_1"},
 			{"name": "Revisi Final_v7", "hits": [0.5, 0.9], "power": 0.8, "heavy": [false, true]},
 		]},
 	"target": {"name": "Target", "hp": 80, "atk": 9, "spd": 8, "scale": 0.47, "color": Color("9be02a"),
@@ -95,17 +96,65 @@ const ENEMIES := {
 		"quote": "Angka harus naik.",
 		"moves": [
 			{"name": "Gigit Kalkulator", "hits": [0.8], "power": 1.2},
-			{"name": "Angka Naik Terus", "hits": [0.5, 0.5, 0.3], "power": 0.6},
+			{"name": "Angka Naik", "hits": [0.6, 0.45, 0.3], "power": 0.6, "anim": "musa_2"},
 			{"name": "Grafik Anjlok", "hits": [1.3], "power": 1.6, "heavy": [true]},
 		]},
 	"lembur": {"name": "Lembur", "hp": 120, "atk": 10, "spd": 9, "scale": 0.58, "color": Color("e6186e"),
 		"sprite": "res://assets/sprites/lembur.png", "exp": 32, "money": 16000, "npc": "npc_lembur", "weak": "api",
 		"quote": "Kerja masih bisa lebih banyak.",
 		"moves": [
-			{"name": "Tinju Lembur", "hits": [0.75, 0.4], "power": 0.8},
+			{"name": "Rantai Shift", "hits": [0.8, 0.35, 0.35], "power": 0.6, "anim": "musa_3"},
 			{"name": "Struk Tanpa Akhir", "hits": [0.6, 0.25, 0.25, 0.25, 0.25], "power": 0.35, "all": true},
 			{"name": "Shift Tambahan", "hits": [1.4, 0.2], "power": 1.2, "heavy": [true, false]},
 		]},
+	"absensi": {"name": "Absensi", "hp": 70, "atk": 9, "spd": 12, "h": 250, "color": Color("d8243a"), "sprite": M + "mon_absensi.png",
+		"exp": 18, "money": 9000, "npc": "npc_deadline", "weak": "listrik", "quote": "Telat satu menit = potong gaji.",
+		"moves": [{"name": "Tap Kartu", "hits": [0.6, 0.3], "power": 0.6}, {"name": "Telat 1 Menit!", "hits": [1.1], "power": 1.4, "heavy": [true]}]},
+	"spam": {"name": "Spam", "hp": 55, "atk": 7, "spd": 15, "h": 250, "color": Color("3aa8e0"), "sprite": M + "mon_spam.png",
+		"exp": 16, "money": 8000, "npc": "npc_deadline", "weak": "api", "quote": "Anda memenangkan hadiah! Klik di sini!",
+		"moves": [{"name": "Banjir Pesan", "hits": [0.7, 0.18, 0.18, 0.18, 0.18], "power": 0.3, "anim": "musb_0"}, {"name": "Forward Berantai", "hits": [0.5, 0.5], "power": 0.6}]},
+	"fotokopi": {"name": "Fotokopi", "hp": 95, "atk": 9, "spd": 8, "h": 270, "color": Color("9a5ad0"), "sprite": M + "mon_fotokopi.png",
+		"exp": 22, "money": 11000, "npc": "npc_target", "weak": "listrik", "resist": "kertas", "quote": "Rangkap tiga. Dilegalisir.",
+		"moves": [{"name": "Salin Serang", "hits": [0.8, 0.3, 0.3], "power": 0.6, "anim": "musb_1"}, {"name": "Kertas Macet", "hits": [1.2], "power": 1.3, "heavy": [true]}]},
+	"rapatmeja": {"name": "Rapat Meja", "hp": 90, "atk": 10, "spd": 9, "h": 270, "color": Color("c08a2a"), "sprite": M + "mon_rapat.png",
+		"exp": 22, "money": 11000, "npc": "npc_lembur", "weak": "kertas", "quote": "Rapat ini bisa jadi rapat berikutnya.",
+		"moves": [{"name": "Suara Rapat", "hits": [0.9, 0.25, 0.25], "power": 0.6, "heavy": [false, false, true], "anim": "musb_2"}, {"name": "Mic Ekor", "hits": [0.6], "power": 1.0}]},
+	"arsip": {"name": "Arsip", "hp": 115, "atk": 9, "spd": 6, "h": 280, "color": Color("6a8a3a"), "sprite": M + "mon_arsip.png",
+		"exp": 24, "money": 12000, "npc": "npc_target", "weak": "api", "resist": "fisik", "quote": "Semua disimpan. Tak ada yang dibaca.",
+		"moves": [{"name": "Longsor Arsip", "hits": [1.0, 0.25, 0.25, 0.25], "power": 0.45, "all": true, "anim": "musb_3"}, {"name": "Laci Hantam", "hits": [0.9], "power": 1.2}]},
+	"reimburse": {"name": "Reimburse", "hp": 80, "atk": 9, "spd": 10, "h": 260, "color": Color("c02a3a"), "sprite": M + "mon_reimburse.png",
+		"exp": 20, "money": 15000, "npc": "npc_lembur", "weak": "kertas", "quote": "Struknya mana? Harus asli.",
+		"moves": [{"name": "Cap APPROVED", "hits": [1.1], "power": 1.4, "heavy": [true]}, {"name": "Struk Melilit", "hits": [0.5, 0.3, 0.3], "power": 0.5}]},
+	"buffer": {"name": "Buffer", "hp": 60, "atk": 8, "spd": 14, "h": 250, "color": Color("1f8a8a"), "sprite": M + "mon_buffer.png",
+		"exp": 16, "money": 8000, "npc": "npc_deadline", "weak": "listrik", "quote": "Loading... 99%... Loading...",
+		"moves": [{"name": "Loading...", "hits": [1.4, 0.15], "power": 0.8, "heavy": [false, true]}, {"name": "Kabel Lilit", "hits": [0.5, 0.25, 0.25], "power": 0.5}]},
+	"presentasi": {"name": "Presentasi", "hp": 70, "atk": 9, "spd": 12, "h": 260, "color": Color("e6186e"), "sprite": M + "mon_presentasi.png",
+		"exp": 18, "money": 9000, "npc": "npc_revisi", "weak": "api", "quote": "Slide 47 dari 212.",
+		"moves": [{"name": "Sorot Proyektor", "hits": [1.0], "power": 1.3, "heavy": [true]}, {"name": "Slide Tajam", "hits": [0.4, 0.3, 0.3, 0.3], "power": 0.4}]},
+	"shiftganda": {"name": "Shift Ganda", "hp": 90, "atk": 10, "spd": 9, "h": 260, "color": Color("d0a030"), "sprite": M + "mon_shiftganda.png",
+		"exp": 24, "money": 12000, "npc": "npc_lembur", "weak": "listrik", "quote": "Satu badan, dua shift.",
+		"moves": [{"name": "Dua Shift", "hits": [0.7, 0.7], "power": 0.8}, {"name": "Jam Ganda", "hits": [0.5, 0.2, 0.5, 0.2], "power": 0.45}]},
+	"komuter": {"name": "Komuter", "hp": 85, "atk": 9, "spd": 11, "h": 270, "color": Color("2aa0a0"), "sprite": M + "mon_komuter.png",
+		"exp": 20, "money": 10000, "npc": "npc_target", "weak": "kertas", "quote": "Transit. Selalu transit.",
+		"moves": [{"name": "Gantungan KRL", "hits": [0.6, 0.35], "power": 0.7}, {"name": "Desak-desakan", "hits": [0.8, 0.3, 0.3], "power": 0.4, "all": true}]},
+	"kontrak": {"name": "Kontrak", "hp": 90, "atk": 10, "spd": 10, "h": 270, "color": Color("c8a040"), "sprite": M + "mon_kontrak.png",
+		"exp": 24, "money": 13000, "npc": "npc_revisi", "weak": "api", "quote": "Tanda tangan di sini. Dan di sini. Dan di sini.",
+		"moves": [{"name": "Tanda Tangan Emas", "hits": [0.9, 0.3], "power": 0.8, "heavy": [false, true]}, {"name": "Klausul Mengikat", "hits": [0.6, 0.6], "power": 0.6}]},
+	"gosip": {"name": "Gosip", "hp": 60, "atk": 8, "spd": 13, "h": 260, "color": Color("7a3ab0"), "sprite": M + "mon_gosip.png",
+		"exp": 16, "money": 8000, "npc": "npc_revisi", "weak": "kertas", "panic": 0.5, "quote": "Eh, kamu udah dengar belum?",
+		"moves": [{"name": "Bisik-bisik", "hits": [0.5, 0.2, 0.2, 0.2], "power": 0.35}, {"name": "Kabar Burung", "hits": [0.9], "power": 1.1}]},
+	"ratu": {"name": "Ratu Notifikasi", "hp": 240, "atk": 12, "spd": 13, "h": 340, "color": Color("e6186e"), "sprite": M + "boss_ratu.png", "boss": true,
+		"exp": 90, "money": 40000, "npc": "npc_revisi", "weak": "kertas", "quote": "Satu notifikasi lagi. Dan lagi. Dan lagi.",
+		"moves": [{"name": "Mode Senyap", "hits": [], "power": 0, "special": "heal", "anim": "ratu_3"},
+			{"name": "Spam Seribu", "hits": [0.8, 0.18, 0.18, 0.18, 0.18, 0.18], "power": 0.3, "anim": "ratu_0"},
+			{"name": "Panggilan Darurat", "hits": [1.2, 0.3], "power": 1.0, "heavy": [true, false], "anim": "ratu_1"},
+			{"name": "Rapat Tanpa Akhir", "hits": [1.0, 0.3, 0.3], "power": 0.55, "all": true, "anim": "ratu_2"}]},
+	"direktur": {"name": "Direktur Nol", "hp": 330, "atk": 14, "spd": 10, "h": 360, "color": Color("e8b43a"), "sprite": M + "boss_direktur.png", "boss": true, "final": true,
+		"exp": 0, "money": 0, "npc": "npc_lembur", "weak": "listrik", "quote": "Semua kontrak berakhir menjadi nol.",
+		"moves": [{"name": "Tanda Tangan Maut", "hits": [1.0, 0.25], "power": 0.9, "heavy": [false, true], "anim": "dir_0"},
+			{"name": "Kontrak Mengikat", "hits": [0.8, 0.4, 0.4], "power": 0.55, "debuff": true, "anim": "dir_1"},
+			{"name": "Audit Nol", "hits": [1.3, 0.35], "power": 0.9, "all": true, "heavy": [true, false], "anim": "dir_2"},
+			{"name": "Putus Kontrak", "hits": [1.5], "power": 2.0, "heavy": [true], "anim": "dir_3"}]},
 }
 
 ## Varian = musuh dasar + pengali + warna + gerakan/kelemahan sendiri.
@@ -137,8 +186,10 @@ const VARIANTS := {
 		"tint": Color(0.9, 1.1, 0.8), "boss": true, "exp": 70, "money": 30000},
 	"lembur_manajer": {"base": "lembur", "name": "Manajer Lembur", "hp_mul": 1.0, "atk_mul": 1.0, "scale_mul": 1.1,
 		"tint": Color(1.1, 0.85, 0.95), "boss": true, "exp": 80, "money": 35000},
+	"juragan": {"base": "kontrak", "name": "Juragan Kontrak", "hp_mul": 1.8, "atk_mul": 1.15, "scale_mul": 1.25,
+		"tint": Color(1.1, 0.95, 0.75), "boss": true, "exp": 70, "money": 45000},
 	"lembur_abadi": {"base": "lembur", "name": "LEMBUR ABADI", "hp_mul": 1.45, "atk_mul": 1.1, "scale_mul": 1.35,
-		"tint": Color(0.75, 0.6, 0.9), "boss": true, "exp": 0, "money": 0, "final": true},
+		"tint": Color(0.75, 0.6, 0.9), "boss": true, "exp": 60, "money": 0},
 }
 
 const ITEMS := {
@@ -160,6 +211,17 @@ const ITEMS := {
 
 ## NPC (potret + nama) untuk dialog.
 const NPCS := {
+	"darma": {"name": "Pak Darma", "color": Color("8a5a2a"), "tex": "res://assets/npc2/face_darma.png"},
+	"intan": {"name": "Intan", "color": Color("d0a020"), "tex": "res://assets/npc2/face_intan.png"},
+	"lilis": {"name": "Bu Lilis", "color": Color("a02a4a"), "tex": "res://assets/npc2/face_lilis.png"},
+	"arman": {"name": "Arman", "color": Color("e06a20"), "tex": "res://assets/npc2/face_arman.png"},
+	"sekar": {"name": "Sekar", "color": Color("2a5a9a"), "tex": "res://assets/npc2/face_sekar.png"},
+	"joko": {"name": "Pak Joko", "color": Color("3a7a3a"), "tex": "res://assets/npc2/face_joko.png"},
+	"bagas": {"name": "Bagas", "color": Color("2a4a8a"), "tex": "res://assets/npc2/face_bagas.png"},
+	"vina": {"name": "Vina", "color": Color("6a6a7a"), "tex": "res://assets/npc2/face_vina.png"},
+	"ratu": {"name": "Ratu Notifikasi", "color": Color("e6186e"), "tex": "res://assets/npc2/face_ratu.png"},
+	"direktur": {"name": "Direktur Nol", "color": Color("b08a20"), "tex": "res://assets/npc2/face_direktur.png"},
+	"direktur_h": {"name": "Pak Direktur", "color": Color("b08a20"), "tex": "res://assets/npc2/face_direktur_human.png"},
 	"bu_sari": {"name": "Bu Sari", "color": Color("c0392b"), "tex": "res://assets/world/face_busari.png"},
 	"pak_dedi": {"name": "Pak Dedi", "color": Color("f07a1f"), "tex": "res://assets/world/npc_deadline.png"},
 	"mbak_rani": {"name": "Mbak Rani", "color": Color("9a5ad0"), "tex": "res://assets/world/npc_revisi.png"},
@@ -185,6 +247,36 @@ const NPCS := {
 
 ## Terjemahan Inggris untuk teks data (nama jurus, musuh, item...).
 const EN := {
+	"Tebas Komuter": "Commuter Slash", "Tusuk Deadline": "Deadline Thrust", "Pulang Tepat Waktu": "Clock Out On Time", "Payung Pelindung": "Guardian Umbrella",
+	"Sabet Revisi": "Revision Slash", "Badai Berkas": "File Storm", "Staples Presisi": "Precision Staples", "Tameng Dokumen": "Document Shield",
+	"Tebasan payung beruntun 4 kali. Combo sempurna = +1 AP.": "4 umbrella slashes. Perfect combo = +1 AP.",
+	"Satu tusukan payung berapi super kuat. TAHAN Z lalu lepas di hijau. Elemen API.": "One mighty flaming umbrella thrust. HOLD Z, release on green. FIRE element.",
+	"5 terjangan kilat ke musuh acak. Cepat dan beruntun!": "5 lightning dashes on random enemies!",
+	"Buka payung: damage ke party -50% selama 2 giliran. QTE sempurna = 3 giliran.": "Open the umbrella: party takes 50% less damage for 2 turns. Perfect QTE = 3 turns.",
+	"Sabetan kipas beruntun. Semua PERFECT = musuh pusing (lewat 1 giliran).": "Fan slash chain. All PERFECT = enemy dizzy (skips a turn).",
+	"Pusaran berkas ke SEMUA musuh. Elemen KERTAS.": "A whirlwind of files at ALL enemies. PAPER element.",
+	"Tembakan staples! ATK musuh -30% selama 3 giliran.": "Staple shots! Enemy ATK -30% for 3 turns.",
+	"Dinding dokumen: damage ke party -50% selama 2 giliran. QTE sempurna = 3 giliran.": "A wall of documents: party takes 50% less damage for 2 turns. Perfect QTE = 3 turns.",
+	"Jarum Menit": "Minute Hand", "Hujan Koreksi": "Correction Rain", "Angka Naik": "Rising Numbers", "Rantai Shift": "Shift Chains",
+	"Absensi": "Attendance", "Spam": "Spam", "Fotokopi": "Photocopier", "Rapat Meja": "Meeting Table", "Arsip": "Archive", "Reimburse": "Reimburse",
+	"Buffer": "Buffer", "Presentasi": "Presentation", "Shift Ganda": "Double Shift", "Komuter": "Commuter", "Kontrak": "Contract", "Gosip": "Gossip",
+	"Ratu Notifikasi": "Notification Queen", "Direktur Nol": "Director Zero", "Juragan Kontrak": "Contract Tycoon",
+	"Tap Kartu": "Card Tap", "Telat 1 Menit!": "1 Minute Late!", "Banjir Pesan": "Message Flood", "Forward Berantai": "Chain Forward",
+	"Salin Serang": "Copy Strike", "Kertas Macet": "Paper Jam", "Suara Rapat": "Meeting Voice", "Mic Ekor": "Mic Tail",
+	"Longsor Arsip": "Archive Avalanche", "Laci Hantam": "Drawer Slam", "Cap APPROVED": "APPROVED Stamp", "Struk Melilit": "Receipt Wrap",
+	"Loading...": "Loading...", "Kabel Lilit": "Cable Bind", "Sorot Proyektor": "Projector Beam", "Slide Tajam": "Sharp Slides",
+	"Dua Shift": "Two Shifts", "Jam Ganda": "Double Clock", "Gantungan KRL": "Train Handles", "Desak-desakan": "Rush Hour Crush",
+	"Tanda Tangan Emas": "Golden Signature", "Klausul Mengikat": "Binding Clause", "Bisik-bisik": "Whispers", "Kabar Burung": "Rumor Mill",
+	"Spam Seribu": "Thousand Spams", "Panggilan Darurat": "Emergency Call", "Rapat Tanpa Akhir": "Endless Meeting", "Mode Senyap": "Silent Mode",
+	"Tanda Tangan Maut": "Deadly Signature", "Kontrak Mengikat": "Binding Contract", "Audit Nol": "Zero Audit", "Putus Kontrak": "Contract Severance",
+	"Telat satu menit = potong gaji.": "One minute late = pay cut.", "Anda memenangkan hadiah! Klik di sini!": "You've won a prize! Click here!",
+	"Rangkap tiga. Dilegalisir.": "In triplicate. Notarized.", "Rapat ini bisa jadi rapat berikutnya.": "This meeting could be another meeting.",
+	"Semua disimpan. Tak ada yang dibaca.": "Everything filed. Nothing read.", "Struknya mana? Harus asli.": "Where's the receipt? Originals only.",
+	"Loading... 99%... Loading...": "Loading... 99%... Loading...", "Slide 47 dari 212.": "Slide 47 of 212.", "Satu badan, dua shift.": "One body, two shifts.",
+	"Transit. Selalu transit.": "Transit. Always in transit.", "Tanda tangan di sini. Dan di sini. Dan di sini.": "Sign here. And here. And here.",
+	"Eh, kamu udah dengar belum?": "Psst, have you heard?", "Satu notifikasi lagi. Dan lagi. Dan lagi.": "One more notification. And again. And again.",
+	"Semua kontrak berakhir menjadi nol.": "Every contract ends at zero.",
+	"Pak Darma": "Mr. Darma", "Bu Lilis": "Mrs. Lilis", "Pak Joko": "Mr. Joko",
 	"Tinju Komuter": "Commuter Punch", "Tendangan Putar": "Spinning Kick", "Teriak Jam Pulang": "Quitting Time Shout",
 	"Uppercut Deadline": "Deadline Uppercut", "Salto Ojol": "Ojol Somersault", "Kopi Tubruk": "Tubruk Coffee",
 	"Tinju Rapat Darurat": "Emergency Meeting Punch", "Payung Badai": "Storm Umbrella",
@@ -237,7 +329,7 @@ const EN := {
 }
 
 const ELEM_NAME := {"fisik": ["FISIK", "PHYSICAL"], "api": ["API", "FIRE"], "listrik": ["LISTRIK", "SHOCK"], "kertas": ["KERTAS", "PAPER"]}
-const AREA_LVL := {"dukuh": 1.0, "monas": 1.3, "kotatua": 1.6, "blokm": 1.9, "scbd": 2.3}
+
 
 
 var lang := "id"
@@ -424,11 +516,16 @@ func enemy_data(id: String, lvl := 1.0) -> Dictionary:
 	return d
 
 
+## Jumlah musuh dikalahkan di satu lokasi (gabungan versi 1 + 2).
 func area_defeated(area_id: String) -> int:
+	var base := Story.base_of(area_id)
 	var n := 0
-	for e in Story.AREAS[area_id].enemies:
-		if flag("def_" + e.id) and not e.get("boss", false):
-			n += 1
+	for aid in [base, base + "2"]:
+		if not Story.AREAS.has(aid):
+			continue
+		for e in Story.AREAS[aid].enemies:
+			if flag("def_" + e.id) and not e.get("boss", false):
+				n += 1
 	return n
 
 

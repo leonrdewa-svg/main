@@ -126,7 +126,7 @@ func _battle(area: String, def: Dictionary, strike: String) -> void:
 			await w.talk(Story.D[def.post], def.post)
 			Game.set_flag(def.card)
 			Sfx.play("sfx_star")
-		if area == "dukuh" and not Game.flag("prolog_done") and Game.area_defeated("dukuh") >= 4:
+		if Story.base_of(area) == "dukuh" and not Game.flag("prolog_done") and Game.area_defeated("dukuh") >= 4:
 			await w.talk(Story.D.prolog_done, "prolog_done")
 			Game.set_flag("prolog_done")
 		w.refresh_ui()
@@ -156,9 +156,20 @@ func _continue_world(w: World, area: String) -> void:
 			await _final()
 		"reload":
 			_world(area)
+		"move":
+			await cover()
+			var to: String = ev[1].to
+			if Game.pos.x < 0:
+				Game.pos.x = _area_width(to) - 150.0
+			_world(to)
 		"title":
 			await cover()
 			_title()
+
+
+func _area_width(aid: String) -> float:
+	var t: Texture2D = load(Story.AREAS[aid].bg)
+	return t.get_width() * 720.0 / t.get_height()
 
 
 func _map() -> void:
@@ -173,10 +184,10 @@ func _map() -> void:
 		Sfx.play("sfx_heal")
 		Game.save_game()
 		_world(Game.area)
-	elif c == "" or c == Game.area:
+	elif c == "" or c == Story.base_of(Game.area):
 		_world(Game.area)
 	else:
-		Game.pos = Vector2(Story.AREAS[c].station.x + 110, 640)
+		Game.pos = Vector2(Story.AREAS[c].station.x + 130, 640)
 		Game.area = c
 		Game.save_game()
 		_world(c)
@@ -191,7 +202,7 @@ func _final() -> void:
 func _battle_final() -> void:
 	await cover()
 	var b := Battle.new()
-	b.bg_path = Story.AREAS.scbd.bg
+	b.bg_path = Story.AREAS.scbd2.bg
 	b.group = ["lembur_abadi"]
 	b.lvl = 2.3
 	b.music = "bgm_boss"
@@ -200,10 +211,39 @@ func _battle_final() -> void:
 	await reveal()
 	var result := await b.run()
 	await cover()
-	if result == "win":
+	if result != "win":
+		await _game_over("scbd")
+		return
+	var root := Node2D.new()
+	var lb := LiveBg.new()
+	root.add_child(lb)
+	lb.setup(Story.AREAS.scbd.bg, "rain", 1.0, 0)
+	_swap(root)
+	await reveal()
+	await dialog.play(Story.D.nol_reveal, "nol_reveal")
+	await cover()
+	var b2 := Battle.new()
+	b2.bg_path = Story.AREAS.scbd.bg
+	b2.group = ["direktur"]
+	b2.music = "bgm_boss"
+	b2.lvl = 1.0
+	b2.title = Game.L("BOS SEJATI: DIREKTUR NOL", "TRUE BOSS: DIRECTOR ZERO")
+	_swap(b2)
+	await reveal()
+	var r2 := await b2.run()
+	await cover()
+	if r2 == "win":
+		var root2 := Node2D.new()
+		var lb2 := LiveBg.new()
+		root2.add_child(lb2)
+		lb2.setup(Story.AREAS.scbd.bg, "rain", 1.0, 0)
+		_swap(root2)
+		await reveal()
+		await dialog.play(Story.D.nol_post, "nol_post")
+		await cover()
 		await _ending()
 	else:
-		await _game_over("scbd")
+		await _game_over("scbd2")
 
 
 func _game_over(area: String) -> void:
@@ -216,8 +256,9 @@ func _game_over(area: String) -> void:
 	Game.full_heal()
 	Game.money = int(Game.money * 0.9)
 	if v == "retry":
-		Game.pos = Vector2(Story.AREAS[area].station.x + 110, 640)
-		_world(area)
+		var base := Story.base_of(area)
+		Game.pos = Vector2(Story.AREAS[base].station.x + 130, 640)
+		_world(base)
 	else:
 		_title()
 

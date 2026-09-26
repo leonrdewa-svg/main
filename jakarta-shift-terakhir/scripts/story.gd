@@ -6,132 +6,224 @@ const W := "res://assets/world/"
 
 ## Tiap area = panorama beberapa panel (1 panel = 1279 px). Posisi dalam koordinat dunia.
 ## npc.quest: give (serahkan item), fetch (bawa barang temuan), bounty (kalahkan N musuh), gift (hadiah).
+const MAPS := "res://assets/maps/"
+const MO := "res://assets/mon/"
+const N2 := "res://assets/npc2/"
+
+## 7 lokasi x 2 sisi. Jalan ke tepi kanan/kiri untuk pindah sisi.
 const AREAS := {
-	"dukuh": {"name": "Dukuh Atas", "bg": "res://assets/bg/dukuh_atas.jpg", "music": "bgm_title", "panels": 2,
-		"floor": [548, 690], "station": Vector2(120, 600), "map": Vector2(655, 390), "lvl": 1.0,
+	"dukuh": {"name": "Dukuh Atas · Plaza Transit", "name_en": "Dukuh Atas · Transit Plaza", "bg": MAPS + "dukuh_1.jpg", "music": "bgm_title", "wide": true, "lvl": 1.0,
+		"floor": [595, 700], "map": Vector2(655, 390), "station": Vector2(150, 610), "east": "dukuh2",
 		"npcs": [
-			{"id": "satpam_da", "who": "satpam", "sprite": W + "npc_target.png", "pos": Vector2(560, 585), "talk": "satpam_da",
-				"quest": {"id": "air", "type": "give", "item": "air", "n": 1, "reward": {"money": 10000, "item": "kopi", "count": 2},
-					"ask": "q_air_ask", "done": "q_air_done", "after": "q_air_after",
-					"desc": ["Bawakan 1 Air Mineral untuk Pak Satpam (Dukuh Atas).", "Bring 1 Mineral Water to the guard (Dukuh Atas)."]}},
-			{"id": "kopi_da", "who": "kopi_keliling", "sprite": W + "npc_target.png", "tint": Color(1.1, 1.0, 0.8), "pos": Vector2(1180, 590),
-				"quest": {"id": "mkopi", "type": "gift", "reward": {"item": "kopi", "count": 1}, "done": "q_mkopi_done", "after": "q_mkopi_after"}},
-			{"id": "ojol_da", "who": "ojol", "sprite": W + "npc_deadline.png", "tint": Color(0.8, 1.1, 0.8), "pos": Vector2(1560, 640), "talk": "da_ojol"},
-			{"id": "sinta_da", "who": "mahasiswi", "sprite": W + "npc_revisi.png", "tint": Color(1.1, 0.9, 1.0), "flip": true, "pos": Vector2(2080, 600), "talk": "da_sinta"},
+			{"id": "satpam_da", "who": "satpam", "sprite": W + "npc_target.png", "pos": Vector2(560, 605), "talk": "satpam_da", "quest": {"id": "air", "type": "give", "item": "air", "n": 1, "reward": {"money": 10000, "item": "kopi", "count": 2}, "ask": "q_air_ask", "done": "q_air_done", "after": "q_air_after", "desc": ["Bawakan 1 Air Mineral untuk Pak Satpam (Dukuh Atas).", "Bring 1 Mineral Water to the guard (Dukuh Atas)."]}},
+			{"id": "kopi_da", "who": "kopi_keliling", "sprite": W + "npc_target.png", "pos": Vector2(1450, 630), "tint": Color(1.1, 1.0, 0.8), "quest": {"id": "mkopi", "type": "gift", "reward": {"item": "kopi", "count": 1}, "done": "q_mkopi_done", "after": "q_mkopi_after"}},
+			{"id": "bagas", "who": "bagas", "sprite": N2 + "npc_bagas.png", "pos": Vector2(2050, 610), "talk": "n_bagas"},
 		],
 		"enemies": [
-			{"id": "da_1", "sprite": W + "d_deadline.png", "pos": Vector2(820, 610), "group": ["deadline"]},
-			{"id": "da_2", "sprite": W + "d_revisi.png", "pos": Vector2(1000, 660), "group": ["deadline", "revisi"]},
-			{"id": "da_3", "sprite": W + "d_deadline.png", "pos": Vector2(1400, 620), "group": ["notif", "notif"], "tint": Color(1.1, 1.1, 0.6), "small": true},
-			{"id": "da_4", "sprite": W + "d_revisi.png", "pos": Vector2(1850, 660), "group": ["revisi"]},
-			{"id": "da_5", "sprite": W + "d_deadline.png", "pos": Vector2(2300, 610), "group": ["notif", "deadline"]},
+			{"id": "da_1", "sprite": W + "d_deadline.png", "pos": Vector2(850, 620), "group": ["deadline"]},
+			{"id": "da_2", "sprite": W + "d_revisi.png", "pos": Vector2(1150, 640), "group": ["deadline", "revisi"]},
+			{"id": "da_3", "sprite": W + "d_deadline.png", "pos": Vector2(1750, 620), "group": ["notif", "notif"], "tint": Color(1.1, 1.1, 0.6), "small": true},
 		],
 		"treasures": [
-			{"id": "da_t1", "pos": Vector2(1960, 565), "reward": {"money": 15000}},
-			{"id": "da_t2", "pos": Vector2(2470, 665), "reward": {"item": "plester", "count": 2}},
+			{"id": "da_t1", "pos": Vector2(2300, 680), "reward": {"money": 15000}},
 		]},
-	"monas": {"name": "Monas", "bg": W + "bg_monas.jpg", "music": "bgm_title", "panels": 3,
-		"floor": [520, 690], "station": Vector2(120, 600), "map": Vector2(658, 199), "lvl": 1.3, "boss_after": 4,
+	"dukuh2": {"name": "Dukuh Atas · Bawah Jembatan", "name_en": "Dukuh Atas · Under the Bridge", "bg": MAPS + "dukuh_2.jpg", "music": "bgm_title", "wide": true, "lvl": 1.0,
+		"floor": [595, 700], "map": Vector2(655, 390), "west": "dukuh",
 		"npcs": [
-			{"id": "penjual_monas", "who": "karyawati", "sprite": W + "npc_revisi.png", "pos": Vector2(320, 560), "talk": "monas_npc"},
-			{"id": "dimas", "who": "anak", "sprite": W + "npc_deadline.png", "tint": Color(1.0, 1.0, 1.15), "scale": 0.8, "pos": Vector2(1250, 620),
-				"quest": {"id": "layang", "type": "fetch", "key": "layangan", "reward": {"money": 15000, "item": "kartu", "count": 1},
-					"ask": "q_layang_ask", "done": "q_layang_done", "after": "q_layang_after",
-					"desc": ["Temukan layangan Dimas di sekitar Monas.", "Find Dimas's kite around Monas."]}},
-			{"id": "kakek", "who": "kakek", "sprite": W + "npc_lembur.png", "tint": Color(1.0, 0.95, 0.85), "pos": Vector2(2050, 560), "talk": "mo_kakek"},
-			{"id": "rina", "who": "fotografer", "sprite": W + "npc_revisi.png", "tint": Color(1.2, 1.0, 0.8), "flip": true, "pos": Vector2(2900, 600),
-				"quest": {"id": "foto", "type": "gift", "reward": {"item": "roti", "count": 2}, "done": "q_foto_done", "after": "q_foto_after"}},
+			{"id": "ojol_da", "who": "ojol", "sprite": W + "npc_deadline.png", "pos": Vector2(650, 630), "tint": Color(0.8, 1.1, 0.8), "talk": "da_ojol"},
+			{"id": "sinta_da", "who": "mahasiswi", "sprite": W + "npc_revisi.png", "pos": Vector2(1850, 615), "tint": Color(1.1, 0.9, 1.0), "flip": true, "talk": "da_sinta"},
 		],
 		"enemies": [
-			{"id": "mo_1", "sprite": W + "d_revisi.png", "pos": Vector2(600, 620), "group": ["revisi", "revisi"]},
-			{"id": "mo_2", "sprite": W + "d_deadline.png", "pos": Vector2(900, 660), "group": ["deadline", "revisi", "deadline"]},
-			{"id": "mo_3", "sprite": W + "d_deadline.png", "pos": Vector2(1550, 600), "group": ["notif", "notif", "notif"], "tint": Color(1.1, 1.1, 0.6), "small": true},
-			{"id": "mo_4", "sprite": W + "d_revisi.png", "pos": Vector2(1900, 650), "group": ["rapat"], "tint": Color(0.75, 1.25, 0.85)},
-			{"id": "mo_5", "sprite": W + "d_revisi.png", "pos": Vector2(2450, 620), "group": ["revisi_beku", "revisi"], "tint": Color(0.7, 0.9, 1.35)},
-			{"id": "mo_6", "sprite": W + "d_deadline.png", "pos": Vector2(3050, 660), "group": ["deadline_merah"], "tint": Color(1.3, 0.65, 0.6)},
-			{"id": "mo_boss", "sprite": W + "d_revisi.png", "pos": Vector2(3550, 580), "group": ["revisi_agung"], "boss": true,
-				"card": "kartu_monas", "pre": "monas_boss_pre", "post": "monas_boss_post"},
+			{"id": "da_4", "sprite": W + "d_revisi.png", "pos": Vector2(1150, 640), "group": ["revisi"]},
+			{"id": "da_5", "sprite": W + "d_deadline.png", "pos": Vector2(1500, 620), "group": ["notif", "deadline"]},
+			{"id": "da_6", "sprite": MO + "mon_spam.png", "pos": Vector2(2350, 640), "group": ["spam"], "tint": Color(1,1,1)},
+			{"id": "da_7", "sprite": MO + "mon_buffer.png", "pos": Vector2(2800, 640), "group": ["buffer"]},
 		],
 		"treasures": [
-			{"id": "mo_t1", "pos": Vector2(1680, 545), "reward": {"key": "layangan"}},
-			{"id": "mo_t2", "pos": Vector2(2680, 670), "reward": {"money": 20000}},
-			{"id": "mo_t3", "pos": Vector2(3750, 640), "reward": {"item": "nasi", "count": 2}},
+			{"id": "da_t2", "pos": Vector2(2950, 690), "reward": {"item": "plester", "count": 2}},
 		]},
-	"kotatua": {"name": "Kota Tua", "bg": W + "bg_kotatua.jpg", "music": "bgm_title", "panels": 3,
-		"floor": [520, 690], "station": Vector2(120, 600), "map": Vector2(689, 77), "lvl": 1.6, "boss_after": 5,
+	"monas": {"name": "Monas · Taman Monumen", "name_en": "Monas · Monument Park", "bg": MAPS + "monas_1.jpg", "music": "bgm_title", "wide": true, "lvl": 1.3,
+		"floor": [595, 700], "map": Vector2(658, 199), "station": Vector2(150, 610), "east": "monas2", "boss_after": 7,
 		"npcs": [
-			{"id": "sepeda", "who": "pekerja", "sprite": W + "npc_deadline.png", "pos": Vector2(930, 560),
-				"quest": {"id": "sepeda", "type": "bounty", "kinds": ["target", "kpi", "target_emas"], "n": 3, "reward": {"money": 20000, "item": "plester", "count": 3},
-					"ask": "q_sepeda_ask", "done": "q_sepeda_done", "after": "q_sepeda_after",
-					"desc": ["Kalahkan 3 musuh jenis Target/KPI (Kota Tua).", "Defeat 3 Quota/KPI-type enemies (Kota Tua)."]}},
-			{"id": "pemandu", "who": "pemandu", "sprite": W + "npc_lembur.png", "tint": Color(0.9, 0.9, 1.1), "pos": Vector2(1700, 560), "talk": "kt_pemandu"},
-			{"id": "wayan", "who": "seniman", "sprite": W + "npc_target.png", "tint": Color(1.0, 0.85, 1.1), "flip": true, "pos": Vector2(2550, 600), "talk": "kt_seniman"},
+			{"id": "penjual_monas", "who": "karyawati", "sprite": W + "npc_revisi.png", "pos": Vector2(420, 610), "talk": "monas_npc"},
+			{"id": "dimas", "who": "anak", "sprite": W + "npc_deadline.png", "pos": Vector2(1350, 640), "tint": Color(1.0, 1.0, 1.15), "scale": 0.8, "quest": {"id": "layang", "type": "fetch", "key": "layangan", "reward": {"money": 15000, "item": "kartu", "count": 1}, "ask": "q_layang_ask", "done": "q_layang_done", "after": "q_layang_after", "desc": ["Temukan layangan Dimas di sekitar Monas.", "Find Dimas's kite around Monas."]}},
+			{"id": "joko", "who": "joko", "sprite": N2 + "npc_joko.png", "pos": Vector2(2450, 615), "talk": "n_joko"},
 		],
 		"enemies": [
-			{"id": "kt_1", "sprite": W + "d_target.png", "pos": Vector2(480, 640), "group": ["target"]},
-			{"id": "kt_2", "sprite": W + "d_deadline.png", "pos": Vector2(720, 610), "group": ["deadline", "target"]},
-			{"id": "kt_3", "sprite": W + "d_revisi.png", "pos": Vector2(1300, 660), "group": ["revisi", "target", "revisi"]},
-			{"id": "kt_4", "sprite": W + "d_target.png", "pos": Vector2(1950, 620), "group": ["target_emas"], "tint": Color(1.35, 1.15, 0.45)},
-			{"id": "kt_5", "sprite": W + "d_target.png", "pos": Vector2(2300, 650), "group": ["kpi"], "tint": Color(1.35, 0.7, 0.7)},
-			{"id": "kt_6", "sprite": W + "d_deadline.png", "pos": Vector2(2850, 610), "group": ["notif", "notif", "deadline_merah"], "tint": Color(1.3, 0.65, 0.6)},
-			{"id": "kt_7", "sprite": W + "d_target.png", "pos": Vector2(3300, 660), "group": ["kpi", "revisi_beku"], "tint": Color(1.35, 0.7, 0.7)},
-			{"id": "kt_boss", "sprite": W + "d_target.png", "pos": Vector2(3620, 560), "group": ["target_raksasa"], "boss": true,
-				"card": "kartu_kotatua", "pre": "kotatua_boss_pre", "post": "kotatua_boss_post"},
+			{"id": "mo_1", "sprite": W + "d_revisi.png", "pos": Vector2(900, 640), "group": ["revisi", "revisi"]},
+			{"id": "mo_2", "sprite": W + "d_deadline.png", "pos": Vector2(1650, 660), "group": ["deadline", "revisi", "deadline"]},
+			{"id": "mo_3", "sprite": W + "d_deadline.png", "pos": Vector2(2150, 620), "group": ["notif", "notif", "notif"], "tint": Color(1.1, 1.1, 0.6), "small": true},
+			{"id": "mo_4", "sprite": W + "d_revisi.png", "pos": Vector2(3050, 640), "group": ["rapat"], "tint": Color(0.75, 1.25, 0.85)},
+			{"id": "mo_4b", "sprite": MO + "mon_gosip.png", "pos": Vector2(3650, 640), "group": ["gosip", "revisi"]},
 		],
 		"treasures": [
-			{"id": "kt_t1", "pos": Vector2(1100, 545), "reward": {"key": "biji_kopi"}},
-			{"id": "kt_t2", "pos": Vector2(2150, 670), "reward": {"money": 25000}},
-			{"id": "kt_t3", "pos": Vector2(3120, 560), "reward": {"item": "kopi", "count": 2}},
+			{"id": "mo_t1", "pos": Vector2(2750, 610), "reward": {"key": "layangan"}},
 		]},
-	"blokm": {"name": "Blok M", "bg": "res://assets/bg/blok_m.jpg", "music": "bgm_title", "panels": 3,
-		"floor": [560, 690], "station": Vector2(120, 610), "map": Vector2(475, 475), "lvl": 1.9, "boss_after": 5,
-		"shop": Vector2(700, 585),
+	"monas2": {"name": "Monas · Jalur Taman Timur", "name_en": "Monas · East Garden Path", "bg": MAPS + "monas_2.jpg", "music": "bgm_title", "wide": true, "lvl": 1.3,
+		"floor": [595, 700], "map": Vector2(658, 199), "west": "monas", "boss_after": 7,
 		"npcs": [
-			{"id": "barista", "who": "barista", "sprite": W + "npc_deadline.png", "tint": Color(0.9, 0.8, 0.7), "pos": Vector2(1400, 600),
-				"quest": {"id": "barista", "type": "fetch", "key": "biji_kopi", "reward": {"money": 15000, "item": "kopi", "count": 3},
-					"ask": "q_barista_ask", "done": "q_barista_done", "after": "q_barista_after",
-					"desc": ["Cari karung biji kopi di Kota Tua untuk Mas Barista.", "Find a sack of coffee beans in Kota Tua for the barista."]}},
-			{"id": "pengamen", "who": "pengamen", "sprite": W + "npc_target.png", "tint": Color(1.1, 0.8, 0.9), "pos": Vector2(2150, 640), "talk": "bm_pengamen"},
-			{"id": "sopir", "who": "sopir", "sprite": W + "npc_lembur.png", "tint": Color(0.85, 1.0, 1.1), "flip": true, "pos": Vector2(2750, 590), "talk": "bm_sopir"},
+			{"id": "kakek", "who": "kakek", "sprite": W + "npc_lembur.png", "pos": Vector2(700, 610), "tint": Color(1.0, 0.95, 0.85), "talk": "mo_kakek"},
+			{"id": "intan", "who": "intan", "sprite": N2 + "npc_intan.png", "pos": Vector2(1850, 620), "quest": {"id": "sepeda2", "type": "bounty", "kinds": ["spam", "notif"], "n": 3, "reward": {"money": 18000, "item": "roti", "count": 2}, "ask": "q_intan_ask", "done": "q_intan_done", "after": "q_intan_after", "desc": ["Kalahkan 3 Spam/Notifikasi untuk Intan (Monas).", "Defeat 3 Spam/Notification enemies for Intan (Monas)."]}},
+			{"id": "rina", "who": "fotografer", "sprite": W + "npc_revisi.png", "pos": Vector2(3200, 615), "tint": Color(1.2, 1.0, 0.8), "flip": true, "quest": {"id": "foto", "type": "gift", "reward": {"item": "roti", "count": 2}, "done": "q_foto_done", "after": "q_foto_after"}},
 		],
 		"enemies": [
-			{"id": "bm_1", "sprite": W + "d_lembur.png", "pos": Vector2(460, 660), "group": ["lembur"]},
-			{"id": "bm_2", "sprite": W + "d_target.png", "pos": Vector2(1100, 650), "group": ["target", "deadline", "revisi"]},
-			{"id": "bm_3", "sprite": W + "d_lembur.png", "pos": Vector2(1750, 620), "group": ["lembur_bayang"], "tint": Color(0.55, 0.45, 0.85)},
-			{"id": "bm_4", "sprite": W + "d_revisi.png", "pos": Vector2(2350, 660), "group": ["rapat", "kpi"], "tint": Color(0.75, 1.25, 0.85)},
-			{"id": "bm_5", "sprite": W + "d_deadline.png", "pos": Vector2(2950, 630), "group": ["deadline_merah", "deadline_merah"], "tint": Color(1.3, 0.65, 0.6)},
-			{"id": "bm_6", "sprite": W + "d_lembur.png", "pos": Vector2(3300, 660), "group": ["lembur", "notif"]},
-			{"id": "bm_boss", "sprite": W + "d_lembur.png", "pos": Vector2(3620, 600), "group": ["lembur_manajer", "deadline"], "boss": true,
-				"card": "kartu_blokm", "pre": "blokm_boss_pre", "post": "blokm_boss_post"},
+			{"id": "mo_5", "sprite": W + "d_revisi.png", "pos": Vector2(1300, 640), "group": ["revisi_beku", "revisi"], "tint": Color(0.7, 0.9, 1.35)},
+			{"id": "mo_6", "sprite": W + "d_deadline.png", "pos": Vector2(2350, 660), "group": ["deadline_merah"], "tint": Color(1.3, 0.65, 0.6)},
+			{"id": "mo_7", "sprite": MO + "mon_spam.png", "pos": Vector2(2800, 640), "group": ["spam", "spam"]},
+			{"id": "mo_boss", "sprite": W + "d_revisi.png", "pos": Vector2(3850, 610), "group": ["revisi_agung"], "boss": true, "card": "kartu_monas", "pre": "monas_boss_pre", "post": "monas_boss_post"},
 		],
 		"treasures": [
-			{"id": "bm_t1", "pos": Vector2(1950, 565), "reward": {"item": "nasi", "count": 2}},
-			{"id": "bm_t2", "pos": Vector2(2550, 680), "reward": {"money": 30000}},
-			{"id": "bm_t3", "pos": Vector2(3760, 650), "reward": {"item": "kartu", "count": 1}},
+			{"id": "mo_t2", "pos": Vector2(2550, 690), "reward": {"money": 20000}},
+			{"id": "mo_t3", "pos": Vector2(4000, 660), "reward": {"item": "nasi", "count": 2}},
 		]},
-	"scbd": {"name": "SCBD · Menara Shift", "name_en": "SCBD · Shift Tower", "bg": W + "bg_scbd.jpg", "music": "bgm_boss", "panels": 3,
-		"floor": [540, 690], "station": Vector2(120, 610), "map": Vector2(980, 459), "lvl": 2.3,
-		"gate": Vector2(3450, 560),
+	"kotatua": {"name": "Kota Tua · Plaza Fatahillah", "name_en": "Kota Tua · Fatahillah Plaza", "bg": MAPS + "kotatua_1.jpg", "music": "bgm_title", "wide": true, "lvl": 1.6,
+		"floor": [595, 700], "map": Vector2(689, 77), "station": Vector2(150, 610), "east": "kotatua2", "boss_after": 7,
 		"npcs": [
-			{"id": "ob", "who": "ob", "sprite": W + "npc_deadline.png", "tint": Color(0.8, 1.0, 0.8), "pos": Vector2(800, 600), "talk": "sc_ob"},
-			{"id": "dewi", "who": "sekretaris", "sprite": W + "npc_revisi.png", "tint": Color(1.0, 0.8, 0.85), "pos": Vector2(1800, 590),
-				"quest": {"id": "idcard", "type": "fetch", "key": "id_card", "reward": {"money": 40000, "item": "kartu", "count": 1},
-					"ask": "q_id_ask", "done": "q_id_done", "after": "q_id_after",
-					"desc": ["Temukan ID card Mbak Dewi yang jatuh di SCBD.", "Find Dewi's lost ID card in SCBD."]}},
-			{"id": "satpam_scbd", "who": "satpam", "sprite": W + "npc_target.png", "pos": Vector2(3150, 560), "talk": "scbd_satpam"},
+			{"id": "sepeda", "who": "pekerja", "sprite": W + "npc_deadline.png", "pos": Vector2(900, 610), "quest": {"id": "sepeda", "type": "bounty", "kinds": ["target", "kpi", "target_emas"], "n": 3, "reward": {"money": 20000, "item": "plester", "count": 3}, "ask": "q_sepeda_ask", "done": "q_sepeda_done", "after": "q_sepeda_after", "desc": ["Kalahkan 3 musuh jenis Target/KPI (Kota Tua).", "Defeat 3 Quota/KPI-type enemies (Kota Tua)."]}},
+			{"id": "darma", "who": "darma", "sprite": N2 + "npc_darma.png", "pos": Vector2(1950, 610), "talk": "n_darma"},
+			{"id": "pemandu", "who": "pemandu", "sprite": W + "npc_lembur.png", "pos": Vector2(3050, 605), "tint": Color(0.9, 0.9, 1.1), "talk": "kt_pemandu"},
 		],
 		"enemies": [
-			{"id": "sc_1", "sprite": W + "d_lembur.png", "pos": Vector2(450, 650), "group": ["lembur", "target"]},
-			{"id": "sc_2", "sprite": W + "d_deadline.png", "pos": Vector2(1150, 660), "group": ["deadline", "lembur", "revisi"]},
-			{"id": "sc_3", "sprite": W + "d_lembur.png", "pos": Vector2(1500, 620), "group": ["lembur_bayang", "lembur_bayang"], "tint": Color(0.55, 0.45, 0.85)},
-			{"id": "sc_4", "sprite": W + "d_target.png", "pos": Vector2(2150, 650), "group": ["kpi", "rapat", "kpi"], "tint": Color(1.35, 0.7, 0.7)},
-			{"id": "sc_5", "sprite": W + "d_deadline.png", "pos": Vector2(2650, 630), "group": ["deadline_merah", "lembur_bayang"], "tint": Color(1.3, 0.65, 0.6)},
-			{"id": "sc_6", "sprite": W + "d_target.png", "pos": Vector2(2950, 660), "group": ["target_emas"], "tint": Color(1.35, 1.15, 0.45)},
+			{"id": "kt_1", "sprite": W + "d_target.png", "pos": Vector2(600, 640), "group": ["target"]},
+			{"id": "kt_2", "sprite": W + "d_deadline.png", "pos": Vector2(1350, 620), "group": ["deadline", "target"]},
+			{"id": "kt_3", "sprite": W + "d_revisi.png", "pos": Vector2(2350, 660), "group": ["revisi", "target", "revisi"]},
+			{"id": "kt_4", "sprite": W + "d_target.png", "pos": Vector2(3550, 640), "group": ["target_emas"], "tint": Color(1.35, 1.15, 0.45)},
 		],
 		"treasures": [
-			{"id": "sc_t1", "pos": Vector2(2380, 560), "reward": {"key": "id_card"}},
-			{"id": "sc_t2", "pos": Vector2(1000, 680), "reward": {"item": "roti", "count": 3}},
-			{"id": "sc_t3", "pos": Vector2(3000, 560), "reward": {"money": 40000}},
+			{"id": "kt_t1", "pos": Vector2(1600, 610), "reward": {"key": "biji_kopi"}},
+		]},
+	"kotatua2": {"name": "Kota Tua · Lorong Kali Besar", "name_en": "Kota Tua · Kali Besar Lane", "bg": MAPS + "kotatua_2.jpg", "music": "bgm_title", "wide": true, "lvl": 1.6,
+		"floor": [595, 700], "map": Vector2(689, 77), "west": "kotatua", "boss_after": 7,
+		"npcs": [
+			{"id": "wayan", "who": "seniman", "sprite": W + "npc_target.png", "pos": Vector2(900, 615), "tint": Color(1.0, 0.85, 1.1), "flip": true, "talk": "kt_seniman"},
+		],
+		"enemies": [
+			{"id": "kt_5", "sprite": W + "d_target.png", "pos": Vector2(1450, 640), "group": ["kpi"], "tint": Color(1.35, 0.7, 0.7)},
+			{"id": "kt_6", "sprite": W + "d_deadline.png", "pos": Vector2(2050, 620), "group": ["notif", "notif", "deadline_merah"], "tint": Color(1.3, 0.65, 0.6)},
+			{"id": "kt_7", "sprite": W + "d_target.png", "pos": Vector2(2750, 660), "group": ["kpi", "revisi_beku"], "tint": Color(1.35, 0.7, 0.7)},
+			{"id": "kt_8", "sprite": MO + "mon_reimburse.png", "pos": Vector2(3350, 640), "group": ["reimburse", "absensi"]},
+			{"id": "kt_boss", "sprite": W + "d_target.png", "pos": Vector2(4150, 610), "group": ["target_raksasa"], "boss": true, "card": "kartu_kotatua", "pre": "kotatua_boss_pre", "post": "kotatua_boss_post"},
+		],
+		"treasures": [
+			{"id": "kt_t2", "pos": Vector2(1750, 690), "reward": {"money": 25000}},
+			{"id": "kt_t3", "pos": Vector2(3650, 620), "reward": {"item": "kopi", "count": 2}},
+		]},
+	"tanahabang": {"name": "Tanah Abang · Pintu Pasar", "name_en": "Tanah Abang · Market Gate", "bg": MAPS + "tanahabang_1.jpg", "music": "bgm_title", "wide": true, "lvl": 1.75,
+		"floor": [595, 700], "map": Vector2(290, 222), "station": Vector2(150, 610), "east": "tanahabang2", "boss_after": 8,
+		"npcs": [
+			{"id": "lilis", "who": "lilis", "sprite": N2 + "npc_lilis.png", "pos": Vector2(950, 615), "quest": {"id": "benang", "type": "give", "item": "roti", "n": 2, "reward": {"money": 25000, "item": "nasi", "count": 3}, "ask": "q_lilis_ask", "done": "q_lilis_done", "after": "q_lilis_after", "desc": ["Bawakan 2 Roti Bakar untuk Bu Lilis (Tanah Abang).", "Bring 2 Toast to Mrs. Lilis (Tanah Abang)."]}},
+			{"id": "arman", "who": "arman", "sprite": N2 + "npc_arman.png", "pos": Vector2(2650, 615), "quest": {"id": "angkut", "type": "bounty", "kinds": ["arsip", "fotokopi", "komuter"], "n": 4, "reward": {"money": 30000, "item": "kartu", "count": 2}, "ask": "q_arman_ask", "done": "q_arman_done", "after": "q_arman_after", "desc": ["Kalahkan 4 Arsip/Fotokopi/Komuter untuk Arman (Tanah Abang).", "Defeat 4 Archive/Photocopier/Commuter enemies for Arman (Tanah Abang)."]}},
+		],
+		"enemies": [
+			{"id": "ta_1", "sprite": MO + "mon_komuter.png", "pos": Vector2(700, 640), "group": ["komuter"]},
+			{"id": "ta_2", "sprite": MO + "mon_gosip.png", "pos": Vector2(1500, 620), "group": ["gosip", "gosip"]},
+			{"id": "ta_3", "sprite": MO + "mon_reimburse.png", "pos": Vector2(2050, 660), "group": ["reimburse", "absensi"]},
+			{"id": "ta_4", "sprite": MO + "mon_fotokopi.png", "pos": Vector2(3100, 640), "group": ["fotokopi"]},
+			{"id": "ta_5", "sprite": MO + "mon_komuter.png", "pos": Vector2(3650, 620), "group": ["komuter", "spam"]},
+		],
+		"treasures": [
+			{"id": "ta_t1", "pos": Vector2(3950, 690), "reward": {"item": "plester", "count": 3}},
+		]},
+	"tanahabang2": {"name": "Tanah Abang · Gang Tekstil", "name_en": "Tanah Abang · Textile Alley", "bg": MAPS + "tanahabang_2.jpg", "music": "bgm_title", "wide": true, "lvl": 1.75,
+		"floor": [595, 700], "map": Vector2(290, 222), "west": "tanahabang", "boss_after": 8,
+		"npcs": [
+		],
+		"enemies": [
+			{"id": "ta_6", "sprite": MO + "mon_arsip.png", "pos": Vector2(900, 640), "group": ["arsip"]},
+			{"id": "ta_7", "sprite": MO + "mon_kontrak.png", "pos": Vector2(1700, 620), "group": ["kontrak"]},
+			{"id": "ta_8", "sprite": MO + "mon_shiftganda.png", "pos": Vector2(2500, 660), "group": ["shiftganda", "gosip"]},
+			{"id": "ta_9", "sprite": MO + "mon_arsip.png", "pos": Vector2(3300, 640), "group": ["arsip", "fotokopi"]},
+			{"id": "ta_boss", "sprite": MO + "mon_kontrak.png", "pos": Vector2(4350, 610), "group": ["juragan"], "boss": true, "pre": "ta_boss_pre", "post": "ta_boss_post"},
+		],
+		"treasures": [
+			{"id": "ta_t2", "pos": Vector2(2050, 690), "reward": {"money": 35000}},
+			{"id": "ta_t3", "pos": Vector2(4050, 620), "reward": {"item": "kopi", "count": 3}},
+		]},
+	"blokm": {"name": "Blok M · Plaza MRT", "name_en": "Blok M · MRT Plaza", "bg": MAPS + "blokm_1.jpg", "music": "bgm_title", "wide": true, "lvl": 1.9,
+		"floor": [595, 700], "map": Vector2(475, 475), "station": Vector2(150, 610), "shop": Vector2(700, 600), "east": "blokm2", "boss_after": 7,
+		"npcs": [
+			{"id": "barista", "who": "barista", "sprite": W + "npc_deadline.png", "pos": Vector2(1450, 620), "tint": Color(0.9, 0.8, 0.7), "quest": {"id": "barista", "type": "fetch", "key": "biji_kopi", "reward": {"money": 15000, "item": "kopi", "count": 3}, "ask": "q_barista_ask", "done": "q_barista_done", "after": "q_barista_after", "desc": ["Cari karung biji kopi di Kota Tua untuk Mas Barista.", "Find a sack of coffee beans in Kota Tua for the barista."]}},
+			{"id": "pengamen", "who": "pengamen", "sprite": W + "npc_target.png", "pos": Vector2(2150, 640), "tint": Color(1.1, 0.8, 0.9), "talk": "bm_pengamen"},
+		],
+		"enemies": [
+			{"id": "bm_1", "sprite": W + "d_lembur.png", "pos": Vector2(1000, 660), "group": ["lembur"]},
+			{"id": "bm_2", "sprite": W + "d_target.png", "pos": Vector2(1800, 640), "group": ["target", "deadline", "revisi"]},
+			{"id": "bm_3", "sprite": W + "d_lembur.png", "pos": Vector2(2400, 620), "group": ["lembur_bayang"], "tint": Color(0.55, 0.45, 0.85)},
+		],
+		"treasures": [
+			{"id": "bm_t1", "pos": Vector2(1650, 610), "reward": {"item": "nasi", "count": 2}},
+		]},
+	"blokm2": {"name": "Blok M · Gang Kuliner", "name_en": "Blok M · Food Alley", "bg": MAPS + "blokm_2.jpg", "music": "bgm_title", "wide": true, "lvl": 1.9,
+		"floor": [595, 700], "map": Vector2(475, 475), "west": "blokm", "boss_after": 7,
+		"npcs": [
+			{"id": "sopir", "who": "sopir", "sprite": W + "npc_lembur.png", "pos": Vector2(700, 610), "tint": Color(0.85, 1.0, 1.1), "flip": true, "talk": "bm_sopir"},
+		],
+		"enemies": [
+			{"id": "bm_4", "sprite": W + "d_revisi.png", "pos": Vector2(1100, 660), "group": ["rapat", "kpi"], "tint": Color(0.75, 1.25, 0.85)},
+			{"id": "bm_5", "sprite": W + "d_deadline.png", "pos": Vector2(1600, 630), "group": ["deadline_merah", "deadline_merah"], "tint": Color(1.3, 0.65, 0.6)},
+			{"id": "bm_6", "sprite": W + "d_lembur.png", "pos": Vector2(2100, 660), "group": ["lembur", "notif"]},
+			{"id": "bm_7", "sprite": MO + "mon_presentasi.png", "pos": Vector2(2550, 640), "group": ["presentasi", "buffer"]},
+			{"id": "bm_boss", "sprite": W + "d_lembur.png", "pos": Vector2(3000, 610), "group": ["lembur_manajer", "deadline"], "boss": true, "card": "kartu_blokm", "pre": "blokm_boss_pre", "post": "blokm_boss_post"},
+		],
+		"treasures": [
+			{"id": "bm_t2", "pos": Vector2(1350, 690), "reward": {"money": 30000}},
+			{"id": "bm_t3", "pos": Vector2(3100, 660), "reward": {"item": "kartu", "count": 1}},
+		]},
+	"cikini": {"name": "Cikini · Halaman Seni", "name_en": "Cikini · Art Courtyard", "bg": MAPS + "cikini_1.jpg", "music": "bgm_title", "wide": true, "lvl": 2.0,
+		"floor": [595, 700], "map": Vector2(1026, 230), "station": Vector2(150, 610), "east": "cikini2", "boss_after": 6,
+		"npcs": [
+			{"id": "sekar", "who": "sekar", "sprite": N2 + "npc_sekar.png", "pos": Vector2(700, 615), "quest": {"id": "kuas", "type": "bounty", "kinds": ["presentasi", "gosip", "buffer"], "n": 3, "reward": {"money": 25000, "item": "roti", "count": 3}, "ask": "q_sekar_ask", "done": "q_sekar_done", "after": "q_sekar_after", "desc": ["Kalahkan 3 Presentasi/Gosip/Buffer untuk Sekar (Cikini).", "Defeat 3 Presentation/Gossip/Buffer enemies for Sekar (Cikini)."]}},
+		],
+		"enemies": [
+			{"id": "ck_1", "sprite": MO + "mon_presentasi.png", "pos": Vector2(1150, 640), "group": ["presentasi"]},
+			{"id": "ck_2", "sprite": MO + "mon_gosip.png", "pos": Vector2(1750, 620), "group": ["gosip", "buffer"]},
+			{"id": "ck_3", "sprite": MO + "mon_rapat.png", "pos": Vector2(2350, 660), "group": ["rapatmeja"]},
+		],
+		"treasures": [
+			{"id": "ck_t1", "pos": Vector2(2550, 690), "reward": {"money": 30000}},
+		]},
+	"cikini2": {"name": "Cikini · Lorong Kopi", "name_en": "Cikini · Coffee Lane", "bg": MAPS + "cikini_2.jpg", "music": "bgm_title", "wide": true, "lvl": 2.0,
+		"floor": [595, 700], "map": Vector2(1026, 230), "west": "cikini", "boss_after": 6,
+		"npcs": [
+		],
+		"enemies": [
+			{"id": "ck_4", "sprite": MO + "mon_shiftganda.png", "pos": Vector2(700, 640), "group": ["shiftganda"]},
+			{"id": "ck_5", "sprite": MO + "mon_spam.png", "pos": Vector2(1300, 620), "group": ["spam", "spam", "gosip"]},
+			{"id": "ck_6", "sprite": MO + "mon_kontrak.png", "pos": Vector2(1900, 660), "group": ["kontrak", "presentasi"]},
+			{"id": "ck_boss", "sprite": MO + "boss_ratu.png", "pos": Vector2(2600, 610), "group": ["ratu"], "boss": true, "pre": "ratu_pre", "post": "ratu_post"},
+		],
+		"treasures": [
+			{"id": "ck_t2", "pos": Vector2(1600, 690), "reward": {"item": "nasi", "count": 3}},
+		]},
+	"scbd": {"name": "SCBD · Lobi Menara Shift", "name_en": "SCBD · Shift Tower Lobby", "bg": MAPS + "scbd_1.jpg", "music": "bgm_boss", "wide": true, "lvl": 2.3,
+		"floor": [595, 700], "map": Vector2(980, 459), "station": Vector2(150, 610), "east": "scbd2",
+		"npcs": [
+			{"id": "ob", "who": "ob", "sprite": W + "npc_deadline.png", "pos": Vector2(500, 615), "tint": Color(0.8, 1.0, 0.8), "talk": "sc_ob"},
+			{"id": "dewi", "who": "sekretaris", "sprite": W + "npc_revisi.png", "pos": Vector2(1450, 610), "tint": Color(1.0, 0.8, 0.85), "quest": {"id": "idcard", "type": "fetch", "key": "id_card", "reward": {"money": 40000, "item": "kartu", "count": 1}, "ask": "q_id_ask", "done": "q_id_done", "after": "q_id_after", "desc": ["Temukan ID card Mbak Dewi yang jatuh di SCBD.", "Find Dewi's lost ID card in SCBD."]}},
+			{"id": "vina", "who": "vina", "sprite": N2 + "npc_vina.png", "pos": Vector2(2150, 610), "talk": "n_vina"},
+		],
+		"enemies": [
+			{"id": "sc_1", "sprite": W + "d_lembur.png", "pos": Vector2(900, 660), "group": ["lembur", "target"]},
+			{"id": "sc_2", "sprite": W + "d_deadline.png", "pos": Vector2(1750, 640), "group": ["deadline", "lembur", "revisi"]},
+			{"id": "sc_3", "sprite": W + "d_lembur.png", "pos": Vector2(2400, 620), "group": ["lembur_bayang", "lembur_bayang"], "tint": Color(0.55, 0.45, 0.85)},
+		],
+		"treasures": [
+			{"id": "sc_t2", "pos": Vector2(1150, 690), "reward": {"item": "roti", "count": 3}},
+		]},
+	"scbd2": {"name": "SCBD · Jalur Servis", "name_en": "SCBD · Service Lane", "bg": MAPS + "scbd_2.jpg", "music": "bgm_boss", "wide": true, "lvl": 2.3,
+		"floor": [595, 700], "map": Vector2(980, 459), "west": "scbd", "gate": Vector2(2880, 600),
+		"npcs": [
+			{"id": "satpam_scbd", "who": "satpam", "sprite": W + "npc_target.png", "pos": Vector2(2450, 605), "talk": "scbd_satpam"},
+		],
+		"enemies": [
+			{"id": "sc_4", "sprite": W + "d_target.png", "pos": Vector2(700, 660), "group": ["kpi", "rapat", "kpi"], "tint": Color(1.35, 0.7, 0.7)},
+			{"id": "sc_5", "sprite": W + "d_deadline.png", "pos": Vector2(1300, 630), "group": ["deadline_merah", "lembur_bayang"], "tint": Color(1.3, 0.65, 0.6)},
+			{"id": "sc_6", "sprite": W + "d_target.png", "pos": Vector2(1900, 640), "group": ["target_emas"], "tint": Color(1.35, 1.15, 0.45)},
+			{"id": "sc_7", "sprite": MO + "mon_shiftganda.png", "pos": Vector2(2200, 660), "group": ["shiftganda", "absensi", "buffer"]},
+		],
+		"treasures": [
+			{"id": "sc_t1", "pos": Vector2(1600, 620), "reward": {"key": "id_card"}},
+			{"id": "sc_t3", "pos": Vector2(1050, 690), "reward": {"money": 40000}},
 		]},
 }
 
@@ -141,8 +233,8 @@ const KEY_ITEMS := {
 	"id_card": ["ID Card Mbak Dewi", "Dewi's ID Card"],
 }
 
-const MAP_LOCKED := {"Tanah Abang": Vector2(290, 222), "Cikini": Vector2(1026, 230)}
-const AREA_ORDER := ["dukuh", "monas", "kotatua", "blokm", "scbd"]
+const MAP_LOCKED := {}
+const AREA_ORDER := ["dukuh", "monas", "kotatua", "tanahabang", "blokm", "cikini", "scbd"]
 
 ## Pekerja yang sudah dibebaskan: [id, en, ja]
 const FREED := [
@@ -176,7 +268,7 @@ const D := {
 		["pak_dedi", "", "Gerbangnya dikunci pakai tiga Kartu Akses. Dipegang tiga manajer yang paling parah dirasuki.", "Its gate is sealed with three Access Cards, held by the three most possessed managers.", "門は三枚のアクセスカードで封印されてる。一番ひどく取り憑かれた三人の上司が持ってるんだ。"],
 		["pak_dedi", "", "Satu di Monas, satu di Kota Tua, satu lagi di Blok M.", "One at Monas, one in Kota Tua, and one in Blok M.", "モナスに一人、コタトゥアに一人、ブロックエムに一人。"],
 		["tara", "focus", "Oke. Kumpulkan tiga kartu, lalu serbu Menara Shift.", "Okay. Collect three cards, then storm the Shift Tower.", "よし。カードを三枚集めて、シフトタワーに乗り込もう。"],
-		["narator", "", "PETA MRT terbuka! Pergi ke papan MRT di kiri layar untuk pindah area. Urutan bebas.", "MRT MAP unlocked! Go to the MRT sign on the left to travel. Any order you like.", "地下鉄マップが解放された！好きな順番で旅立とう。"],
+		["narator", "", "PETA MRT terbuka! Pergi ke papan MRT untuk pindah lokasi. Tiap lokasi punya dua sisi: jalan ke tepi kanan layar. Tanah Abang dan Cikini juga terbuka.", "MRT MAP unlocked! Use the MRT sign to travel. Each place has two sides: walk off the right edge. Tanah Abang and Cikini are open too.", "地下鉄マップが解放された！各地には二つのエリアがある。画面の右端へ歩こう。"],
 	],
 	"monas_npc": [
 		["karyawati", "", "Bosku di sana, di depan Monas. Dia merevisi slide yang sama dari jam 9 pagi.", "My boss is over there by Monas. She's been revising the same slide since 9 AM.", "上司はモナスの前にいるの。朝九時から同じスライドを直してる。"],
@@ -342,6 +434,91 @@ const D := {
 	"q_id_after": [
 		["sekretaris", "", "Semoga malam ini semua orang bisa tap keluar.", "I hope everyone gets to tap out tonight.", "今夜はみんながタッチして帰れますように。"],
 	],
+	"n_bagas": [
+		["bagas", "", "Saya petugas transit di sini. Malam ini tak ada satu pun penumpang yang tap keluar.", "I'm a transit officer here. Tonight not a single passenger has tapped out.", "ここの駅員です。今夜は誰一人改札を出ていません。"],
+		["bagas", "", "Kalau mau ke Tanah Abang atau Cikini, papan MRT sudah bisa dipakai setelah stasiun aman.", "Once the station is safe, the MRT sign can take you to Tanah Abang or Cikini too.", "駅が安全になったら、タナアバンやチキニにも行けますよ。"],
+	],
+	"n_joko": [
+		["joko", "", "Saya jaga taman ini tiga puluh tahun. Baru kali ini bunganya layu karena lembur.", "I've tended this park for thirty years. First time the flowers wilted from overtime.", "この公園を三十年守ってきたが、残業で花が枯れたのは初めてだ。"],
+		["joko", "", "Jalur timur taman penuh pekerja yang tersesat. Hati-hati, Nak.", "The east garden path is full of lost workers. Be careful.", "東の小道は迷った社員だらけだ。気をつけな。"],
+	],
+	"n_darma": [
+		["darma", "", "Museum ini menyimpan kontrak-kontrak kuno. Semalam ada yang mencuri buku besar paling tua.", "This museum keeps ancient contracts. Last night someone stole the oldest ledger.", "この博物館には古い契約書がある。昨夜、一番古い台帳が盗まれたんだ。"],
+		["darma", "", "Pencurinya pakai jas hitam dan wajahnya... hanya angka nol.", "The thief wore a black suit, and his face was... just a zero.", "犯人は黒いスーツで、顔が…ゼロだった。"],
+		["tara", "focus", "Angka nol? Itu bukan monster lembur biasa.", "A zero? That's no ordinary overtime monster.", "ゼロ？普通の残業モンスターじゃないわね。"],
+	],
+	"n_vina": [
+		["vina", "", "Aku analis di lantai lima puluh. Semua data lembur mengalir ke satu akun: Direktur.", "I'm an analyst on the fiftieth floor. All overtime data flows to one account: the Director.", "五十階のアナリストよ。残業データは全部、ひとつのアカウントに流れてる。ディレクターよ。"],
+		["vina", "", "LEMBUR itu cuma manajernya. Bos sebenarnya ada di atasnya.", "OVERTIME is just the manager. The real boss sits above it.", "残業はただの管理職。本当のボスはその上にいる。"],
+	],
+	"q_intan_ask": [
+		["intan", "", "Sepeda-sepedaku dikerubuti monster pesan! Mereka nempel di bel sepeda.", "My rental bikes are swarmed by message monsters! They cling to the bells.", "レンタル自転車にメッセージの怪物が群がってるの！ベルにくっついてる。"],
+		["intan", "", "Tolong usir tiga ekor Spam atau Notifikasi, ya!", "Please chase off three Spam or Notification monsters!", "スパムか通知を三体、追い払ってくれる？"],
+	],
+	"q_intan_done": [
+		["intan", "", "Bel sepedaku bunyi normal lagi! Kring kring!", "My bike bells ring normally again! Ring ring!", "ベルが元通り！チリンチリン！"],
+		["intan", "", "Ini roti bakar dan ongkos, anggap saja sewa gratis.", "Here's toast and some cash. Consider it a free rental.", "トーストとお金をどうぞ。レンタル無料ってことで。"],
+	],
+	"q_intan_after": [
+		["intan", "", "Kapan-kapan keliling Monas naik sepeda, yuk!", "Let's bike around Monas sometime!", "今度モナスを自転車で一周しよう！"],
+	],
+	"q_lilis_ask": [
+		["lilis", "", "Nak, ibu sudah menjahit dua hari tanpa makan. Pesanan seragam kantor nggak ada habisnya.", "Dear, I've been sewing for two days without eating. The office uniform orders never end.", "二日間、何も食べずに縫ってるの。会社の制服の注文が終わらないのよ。"],
+		["lilis", "", "Bawakan dua roti bakar, ya. Nanti ibu kasih bekal.", "Bring me two toasts, please. I'll pack you some food.", "トーストを二つ持ってきてくれる？お弁当をあげるから。"],
+	],
+	"q_lilis_done": [
+		["lilis", "", "Alhamdulillah, kenyang. Ini nasi bungkus buat perjalanan kalian.", "Thank goodness, I'm full. Here are rice packs for your journey.", "ああ、お腹いっぱい。旅のお供にナシブンクスをどうぞ。"],
+	],
+	"q_lilis_after": [
+		["lilis", "", "Seragam kantor itu kupotong longgar. Biar pemakainya bisa bernapas.", "I cut those uniforms loose. So the wearers can breathe.", "制服はゆったり縫ったのよ。着る人が息できるように。"],
+	],
+	"q_arman_ask": [
+		["arman", "", "Gerobakku ketimbun arsip dan fotokopian! Monster-monster itu terus nambah beban.", "My cart's buried in archives and photocopies! Those monsters keep piling on.", "台車がアーカイブとコピーで埋まっちまった！怪物がどんどん積み上げるんだ。"],
+		["arman", "", "Kalahkan empat ekor Arsip, Fotokopi, atau Komuter. Nanti kukasih kartu MRT.", "Beat four Archive, Photocopier or Commuter monsters. I'll give you MRT cards.", "アーカイブかコピーかコミューターを四体倒してくれ。地下鉄カードをやるよ。"],
+	],
+	"q_arman_done": [
+		["arman", "", "Mantap! Gerobakku enteng lagi. Ini dua kartu MRT dan uang rokok... eh, uang kopi.", "Awesome! My cart's light again. Here are two MRT cards and some coffee money.", "最高だ！台車が軽くなった。地下鉄カード二枚とコーヒー代だ。"],
+	],
+	"q_arman_after": [
+		["arman", "", "Angkat barang itu berat. Tapi angkat beban kerjaan orang lain lebih berat.", "Hauling goods is heavy. Carrying other people's workload is heavier.", "荷物は重い。でも他人の仕事を背負うのはもっと重い。"],
+	],
+	"q_sekar_ask": [
+		["sekar", "", "Pameranku diserbu slide presentasi dan gosip. Lukisanku ketutupan grafik!", "My exhibition got invaded by slides and gossip. My paintings are covered in charts!", "私の展示がスライドとゴシップに占領されたの。絵がグラフで隠れちゃった！"],
+		["sekar", "", "Usir tiga Presentasi, Gosip, atau Buffer, ya.", "Chase off three Presentation, Gossip or Buffer monsters.", "プレゼンかゴシップかバッファを三体、追い払って。"],
+	],
+	"q_sekar_done": [
+		["sekar", "", "Lukisannya kelihatan lagi! Ini roti dari kafe sebelah, hadiah dariku.", "The paintings are visible again! Here's bread from the cafe next door, my treat.", "絵が見えるようになった！隣のカフェのパン、お礼よ。"],
+	],
+	"q_sekar_after": [
+		["sekar", "", "Seni itu butuh waktu luang. Jadi tolong, pulanglah tepat waktu.", "Art needs free time. So please, go home on time.", "芸術には余暇が必要。だから定時で帰ってね。"],
+	],
+	"ta_boss_pre": [
+		["narator", "", "Di ujung gang tekstil, gulungan kontrak raksasa berdiri menghadang.", "At the end of the textile alley, a giant scroll of contracts blocks the way.", "布地の路地の奥で、巨大な契約書の巻物が立ちふさがる。"],
+		["raka", "focus", "Kontrak sebanyak ini... siapa yang menandatanganinya?", "This many contracts... who signed them all?", "こんなに契約書が…誰がサインしたんだ？"],
+	],
+	"ta_boss_post": [
+		["narator", "", "Juragan Kontrak robek jadi kertas biasa. Di baliknya tertulis tanda tangan: angka nol.", "The Contract Tycoon tears into plain paper. On the back, a signature: the number zero.", "契約の親玉はただの紙に。裏には署名があった。ゼロの数字。"],
+		["tara", "skeptis", "Nol lagi. Seseorang di atas sana menarik semua benang ini.", "Zero again. Someone up there is pulling all these strings.", "またゼロ。誰かが上で糸を引いてる。"],
+	],
+	"ratu_pre": [
+		["ratu", "", "Ssst. Kalian dengar? Ada tiga ratus pesan belum terbaca.", "Shh. Can you hear it? Three hundred unread messages.", "しっ。聞こえる？未読が三百件。"],
+		["ratu", "", "Satu notifikasi lagi. Dan lagi. Dan lagi. Selamanya.", "One more notification. And again. And again. Forever.", "通知がもう一つ。また一つ。また一つ。永遠に。"],
+		["raka", "focus", "Mode pesawat, sekarang!", "Airplane mode, right now!", "機内モード、今すぐだ！"],
+	],
+	"ratu_post": [
+		["ratu", "", "Sunyi... Aku lupa kalau sunyi itu senyaman ini.", "Silence... I forgot how comfortable silence could be.", "静か…静けさがこんなに心地いいなんて忘れてた。"],
+		["ratu", "", "Direktur menyuruhku agar tak ada yang bisa mematikan ponsel. Dia ada di puncak Menara Shift.", "The Director ordered that no one could turn off their phone. He's at the top of the Shift Tower.", "誰も電話を切れないようにってディレクターに命じられたの。彼はシフトタワーの頂上にいる。"],
+	],
+	"nol_reveal": [
+		["narator", "", "LEMBUR runtuh. Tapi lampu merah menara tidak padam.", "OVERTIME collapses. But the tower's red light does not go out.", "残業は崩れ落ちた。だが塔の赤い光は消えない。"],
+		["direktur", "", "Luar biasa. Kalian menghabisi manajer terbaikku.", "Remarkable. You've destroyed my finest manager.", "見事だ。私の最高の管理職を倒すとは。"],
+		["direktur", "", "Aku Direktur Nol. Semua kontrak, semua jam kerja, semua mimpi... berakhir menjadi nol.", "I am Director Zero. Every contract, every work hour, every dream... ends at zero.", "私はディレクター・ゼロ。すべての契約も、労働時間も、夢も…ゼロで終わる。"],
+		["tara", "focus", "Kalau begitu kami yang membatalkan kontrakmu.", "Then we're cancelling your contract.", "なら、あなたの契約は私たちが破棄するわ。"],
+	],
+	"nol_post": [
+		["direktur_h", "", "Aku... dulu cuma ingin perusahaan ini bertahan. Lalu aku lupa semua orang punya hidup.", "I... only wanted this company to survive. Then I forgot everyone has a life.", "私は…会社を守りたかっただけだ。そして皆に人生があることを忘れた。"],
+		["raka", "normal", "Pak, besok libur. Untuk semua orang. Termasuk Bapak.", "Sir, tomorrow's a holiday. For everyone. Including you.", "明日は休みです。みんな。あなたも。"],
+	],
 }
 
 
@@ -370,12 +547,18 @@ static func boss_hint(id: String) -> String:
 	if not a.has("boss_after"):
 		return ""
 	var need: int = a.boss_after - Game.area_defeated(id)
-	for e in a.enemies:
-		if e.get("boss", false) and Game.flag("def_" + e.id):
-			return ""
+	for aid in [base_of(id), base_of(id) + "2"]:
+		if AREAS.has(aid):
+			for e in AREAS[aid].enemies:
+				if e.get("boss", false) and Game.flag("def_" + e.id):
+					return ""
 	if need > 0:
 		return Game.L("Bebaskan %d pekerja lagi di sini untuk memancing BOS.", "Free %d more workers here to lure out the BOSS.") % need
 	return Game.L("BOS muncul di ujung area!", "The BOSS has appeared at the far end!")
+
+
+static func base_of(id: String) -> String:
+	return id.trim_suffix("2")
 
 
 static func area_name(id: String) -> String:

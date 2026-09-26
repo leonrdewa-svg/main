@@ -11,6 +11,9 @@ cfgd=json.loads(re.search(r'const GODOT_CONFIG = (\{.*?\});', open(S+'web/index.
 cfgd['ensureCrossOriginIsolationHeaders']=False
 wk={n:open(S+'web/'+n).read() for n in ('index.audio.worklet.js','index.audio.position.worklet.js')}
 t=t.replace('__WASM_SIZE__',str(os.path.getsize(S+'web/index.wasm'))).replace('__PCK_SIZE__',str(os.path.getsize(S+'web/index.pck')))
+import glob
+parts=sorted(os.path.basename(x) for x in glob.glob(S+'site/gamedata_part*.wasm'))
+t=t.replace('__PCK_PARTS__',json.dumps(parts))
 t=t.replace('__WORKLETS__',json.dumps(wk)).replace('__CONFIG__',json.dumps(cfgd)).replace('__ENGINE_JS__',js)
 open(S+'site/play.html','w').write(t)
 print('built', len(t))

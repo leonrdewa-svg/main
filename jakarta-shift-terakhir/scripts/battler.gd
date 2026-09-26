@@ -50,7 +50,7 @@ func setup(p_id: String, p_data: Dictionary, p_is_hero: bool) -> void:
 	is_hero = p_is_hero
 	display_name = data.name
 	atk = data.atk
-	base_scale = data.scale
+	base_scale = data.get("scale", 0.45)
 	boss = data.get("boss", false)
 	if is_hero:
 		max_hp = Game.party[id].max_hp
@@ -64,6 +64,8 @@ func setup(p_id: String, p_data: Dictionary, p_is_hero: bool) -> void:
 		tex_attack = tex_idle
 	alive = hp > 0
 	_t = randf() * 10.0
+	if data.has("h"):
+		base_scale = float(data.h) / tex_idle.get_height()
 
 	ground = Polygon2D.new()
 	var pts := PackedVector2Array()
@@ -110,6 +112,54 @@ func _apply_tex(t: Texture2D) -> void:
 	drop.offset = off
 	sprite.scale = Vector2.ONE * base_scale
 	drop.scale = sprite.scale
+
+
+static var _anchors := {}
+var _anim_scale := 0.0
+
+
+## Tampilkan satu frame jurus (dari sheet gerakan) dengan kaki tetap di titik yang sama.
+func show_frame(key: String, idx: int) -> void:
+	if _anchors.is_empty():
+		var f := FileAccess.open("res://assets/skill/anchors.json", FileAccess.READ)
+		if f:
+			_anchors = JSON.parse_string(f.get_as_text())
+	var name := "%s_%d" % [key, idx]
+	if not _anchors.has(name):
+		return
+	var t: Texture2D = load("res://assets/skill/%s.png" % name)
+	var a: Array = _anchors[name]
+	var a0: Array = _anchors.get(key + "_0", a)
+	idle_anim = false
+	var flip := not is_hero
+	sprite.texture = t
+	drop.texture = t
+	sprite.flip_h = flip
+	drop.flip_h = flip
+	var ox: float = t.get_width() / 2.0 - float(a[0])
+	if flip:
+		ox = -ox
+	sprite.offset = Vector2(ox, -t.get_height() / 2.0)
+	drop.offset = sprite.offset
+	var sc := height() / float(a0[2]) * 1.08
+	sprite.scale = Vector2(sc, sc)
+	sprite.rotation = 0.0
+	sprite.skew = 0.0
+	drop.scale = sprite.scale
+
+
+## Putar frame jurus a..b berurutan selama dur detik.
+func play_frames(key: String, from: int, to: int, dur: float) -> void:
+	var n := to - from + 1
+	for i in n:
+		show_frame(key, from + i)
+		await get_tree().create_timer(dur / n).timeout
+
+
+func end_frames() -> void:
+	sprite.flip_h = false
+	drop.flip_h = false
+	set_pose("idle")
 
 
 func height() -> float:

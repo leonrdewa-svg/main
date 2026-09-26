@@ -16,9 +16,10 @@ Godot **4.5+** (dites 4.7) → Import `project.godot` → **F5**. Progres tersim
 
 ## Isi
 
-- **5 area panorama** (2–3 layar, kamera mengikuti pemain): Dukuh Atas, Monas, Kota Tua, Blok M, SCBD.
-  Pindah area lewat **papan MRT** (peta), istirahat & simpan di sana.
-- **16 NPC + 6 misi sampingan** (tanda ! kuning), **14 harta tersembunyi** (kilau bintang), 32 grup musuh + 4 bos.
+- **7 lokasi × 2 sisi = 14 area panorama**: Dukuh Atas, Monas, Kota Tua, Tanah Abang, Blok M, Cikini, SCBD.
+  Jalan ke tepi layar untuk pindah sisi; papan MRT untuk pindah lokasi, istirahat & simpan.
+- **24 NPC + 10 misi sampingan** (tanda ! kuning), **20 harta tersembunyi**, 55 grup musuh + 7 bos
+  (termasuk **Ratu Notifikasi** di Cikini dan bos sejati **Direktur Nol**).
   Bos tiap area muncul setelah cukup pekerja dibebaskan.
 - **Musuh berkeliaran**: sentuh = diserang duluan; tekan Z dari dekat = **Serangan Pertama** (musuh -15% HP).
 - **Battle gaya Expedition 33**
@@ -28,7 +29,9 @@ Godot **4.5+** (dites 4.7) → Import `project.godot` → **F5**. Progres tersim
     Lingkaran merah = tidak bisa di-parry. Parry semua hit = **COUNTER**.
   - **16 jurus** (8 per hero, terbuka tiap naik level) dengan **elemen** API / LISTRIK / KERTAS.
     Tiap musuh punya kelemahan (LEMAH! x1.5) dan ketahanan. Efek: pusing, ATK turun, terbakar, heal party.
-  - **11 jenis musuh**: Deadline, Notifikasi, Deadline Mendesak, Revisi, Revisi Beku, Rapat Zoom,
+  - **23 jenis musuh** (12 baru: Absensi, Spam, Fotokopi, Rapat Meja, Arsip, Reimburse, Buffer, Presentasi,
+    Shift Ganda, Komuter, Kontrak, Gosip). Jurus hero, musuh, dan bos memakai animasi 5 tahap dari motion sheet.
+  - Lama: Deadline, Notifikasi, Deadline Mendesak, Revisi, Revisi Beku, Rapat Zoom,
     Target, Target Emas (bisa kabur), KPI Merah, Lembur, Lembur Bayangan.
   - Gerakan halus (easing + bayangan jejak) dan kamera sinematik yang zoom ke aksi.
   - Meter **SEMANGAT** penuh = **Pamungkas** duo.

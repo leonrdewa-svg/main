@@ -39,14 +39,19 @@ func _ready() -> void:
 	A = Story.AREAS[area_id]
 	var bg := LiveBg.new()
 	add_child(bg)
-	bg.setup(A.bg, "", 1.0, A.get("panels", 1))
+	bg.setup(A.bg, LiveBg.style_for(A.bg), 1.0, 0 if A.get("wide", false) else A.get("panels", 1))
 	world_w = bg.width
 	actors = Node2D.new()
 	actors.y_sort_enabled = true
 	add_child(actors)
 
 	# penanda interaksi
-	_mark("station", A.station, "MRT", Color("1d4f9c"))
+	if A.has("station"):
+		_mark("station", A.station, "MRT", Color("1d4f9c"))
+	if A.has("east"):
+		_mark("east", Vector2(world_w - 110, 610), Story.area_name(A.east).get_slice("·", 1).strip_edges() + "  →", Color("2f7a3a"))
+	if A.has("west"):
+		_mark("west", Vector2(110, 610), "←  " + Story.area_name(A.west).get_slice("·", 1).strip_edges(), Color("2f7a3a"))
 	if A.has("shop"):
 		_mark("shop", A.shop, Game.L("WARUNG BU SARI", "BU SARI'S STALL"), Color("c0392b"))
 		var bs := Sprite2D.new()
@@ -348,11 +353,25 @@ func _process(delta: float) -> void:
 	else:
 		tara.moving = false
 	cam.position = Vector2(clampf(player.position.x, 640, world_w - 640), 360)
+	if player.moving and _grace <= 0.0:
+		if A.has("east") and player.position.x > world_w - 70:
+			_go_side(A.east, 150.0)
+			return
+		if A.has("west") and player.position.x < 70:
+			_go_side(A.west, -1.0)
+			return
 	_update_prompt()
 	for r in roamers:
 		if is_instance_valid(r) and r.touching(player.position) and _grace <= 0.0:
 			_start_battle(r, "enemy")
 			return
+
+
+func _go_side(to: String, x: float) -> void:
+	busy = true
+	player.moving = false
+	Game.pos = Vector2(x, player.position.y)
+	event.emit("move", {"to": to})
 
 
 func _nearest() -> Variant:
@@ -388,7 +407,7 @@ func _update_prompt() -> void:
 		prompt_l.visible = false
 		return
 	prompt_l.visible = true
-	var txt := {"npc": Game.L("Z: BICARA", "Z: TALK"), "station": "Z: MRT", "shop": Game.L("Z: WARUNG", "Z: SHOP"), "gate": Game.L("Z: GERBANG", "Z: GATE"), "enemy": Game.L("Z: SERANG DULUAN!", "Z: STRIKE FIRST!"), "chest": Game.L("Z: AMBIL", "Z: PICK UP")}
+	var txt := {"npc": Game.L("Z: BICARA", "Z: TALK"), "station": "Z: MRT", "east": "Z  →", "west": "←  Z", "shop": Game.L("Z: WARUNG", "Z: SHOP"), "gate": Game.L("Z: GERBANG", "Z: GATE"), "enemy": Game.L("Z: SERANG DULUAN!", "Z: STRIKE FIRST!"), "chest": Game.L("Z: AMBIL", "Z: PICK UP")}
 	prompt_l.text = txt.get(n.type, "Z")
 	prompt_l.label_settings.font_color = Color("ff6a6a") if n.type == "enemy" else Game.YELLOW
 	prompt_l.position = player.position + Vector2(-150, -230)
@@ -465,6 +484,9 @@ func _interact(n: Dictionary) -> void:
 			c.node.queue_free()
 			chests.erase(c)
 			_give_reward(c.def.reward)
+		"east", "west":
+			var to: String = A[n.type]
+			_go_side(to, 150.0 if n.type == "east" else -1.0)
 		"station":
 			Game.pos = player.position
 			busy = true
@@ -617,8 +639,17 @@ func _auto_dir(delta: float) -> Vector2:
 			gref = {"type": "chest", "ref": c}
 			break
 	if goal == Vector2.INF:
+		var want := "station"
+		if Game.cards() >= 3 and A.has("gate"):
+			want = "gate"
+		elif A.has("east") and not _side_clear(A.east):
+			want = "east"
+		elif A.has("west") and not A.has("station"):
+			want = "west"
+		elif Game.cards() >= 3 and A.has("east") and Story.base_of(area_id) == "scbd":
+			want = "east"
 		for m in marks:
-			if m.kind == ("gate" if Game.cards() >= 3 and A.has("gate") else "station"):
+			if m.kind == want:
 				goal = m.pos
 				gref = {"type": m.kind, "ref": m}
 	if goal == Vector2.INF:
@@ -630,6 +661,16 @@ func _auto_dir(delta: float) -> Vector2:
 			_interact(gref)
 		return Vector2.ZERO
 	return d2.normalized()
+
+
+func _side_clear(aid: String) -> bool:
+	for e in Story.AREAS[aid].enemies:
+		if not Game.flag("def_" + e.id):
+			return false
+	for t in Story.AREAS[aid].get("treasures", []):
+		if not Game.flag("chest_" + t.id):
+			return false
+	return true
 
 
 ## Pekerja dirasuki yang berkeliaran.

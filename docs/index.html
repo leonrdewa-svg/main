@@ -14,6 +14,7 @@
 <style>html,body{margin:0;height:100%;background:#1d1822}[hidden]{display:none!important}</style>
 </head>
 <body>
+
 <title>Shift Terakhir</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -190,7 +191,7 @@
 (function () {
   const PACKED = {
     "index.wasm": ["engine.gz.wasm", "application/wasm", 39509339],
-    "index.pck": ["gamedata.gz.wasm", "application/octet-stream", 13446784],
+    "index.pck": [["gamedata_part0.wasm", "gamedata_part1.wasm"], "application/octet-stream", 23466388],
   };
   const nativeFetch = window.fetch.bind(window);
   window.fetch = async function (input, init) {
@@ -198,6 +199,27 @@
     const name = url.split("?")[0].split("#")[0].split("/").pop();
     const packed = PACKED[name];
     if (!packed) return nativeFetch(input, init);
+    if (Array.isArray(packed[0])) {
+      // data dipecah beberapa file: gabungkan berurutan
+      const parts = packed[0];
+      let k = 0, rd = null;
+      const joined = new ReadableStream({
+        async pull(c) {
+          while (true) {
+            if (!rd) {
+              if (k >= parts.length) { c.close(); return; }
+              const r = await nativeFetch(parts[k++]);
+              if (!r.ok) throw new Error("Gagal memuat " + parts[k - 1] + " (" + r.status + ")");
+              rd = r.body.getReader();
+            }
+            const x = await rd.read();
+            if (x.done) { rd = null; continue; }
+            c.enqueue(x.value); return;
+          }
+        },
+      });
+      return new Response(joined, { status: 200, headers: { "Content-Type": packed[1], "Content-Length": String(packed[2]) } });
+    }
     const res = await nativeFetch(packed[0]);
     if (!res.ok) throw new Error("Gagal memuat " + packed[0] + " (" + res.status + ")");
     const reader = res.body.getReader();
@@ -1139,7 +1161,7 @@ if (typeof window !== 'undefined') {
 </script>
 <script>
 (function () {
-  const CONFIG = {"args": [], "canvasResizePolicy": 2, "emscriptenPoolSize": 8, "ensureCrossOriginIsolationHeaders": false, "executable": "index", "experimentalVK": false, "fileSizes": {"index.pck": 13446784, "index.wasm": 39509339}, "focusCanvas": true, "gdextensionLibs": [], "godotPoolSize": 4};
+  const CONFIG = {"args": [], "canvasResizePolicy": 2, "emscriptenPoolSize": 8, "ensureCrossOriginIsolationHeaders": false, "executable": "index", "experimentalVK": false, "fileSizes": {"index.pck": 23466388, "index.wasm": 39509339}, "focusCanvas": true, "gdextensionLibs": [], "godotPoolSize": 4};
   const boot = document.getElementById("boot");
   const play = document.getElementById("play");
   const fill = document.getElementById("fill");

@@ -37,7 +37,17 @@ func setup(path: String, style := "", extra_scale := 1.0, p_panels := 1) -> void
 	m.set_shader_parameter("sway", 0.0035)
 	m.set_shader_parameter("neon", 1.0 if style in ["night", "rain"] else 0.0)
 	m.set_shader_parameter("warm", 1.0 if style in ["sunset", "day"] else 0.35)
-	if panels <= 1:
+	if panels == 0:
+		# panorama lebar tunggal (tinggi 720)
+		var sc0 := 720.0 / tex.get_height()
+		width = tex.get_width() * sc0
+		var p0 := Sprite2D.new()
+		p0.texture = tex
+		p0.centered = false
+		p0.scale = Vector2(sc0, sc0)
+		p0.material = m
+		add_child(p0)
+	elif panels <= 1:
 		sprite = Sprite2D.new()
 		sprite.texture = tex
 		sprite.position = Vector2(640, 360)

@@ -36,7 +36,17 @@ var toast_l: Label
 
 
 func _ready() -> void:
-	A = Story.AREAS[area_id]
+	A = Story.AREAS[area_id].duplicate(true)
+	# 2D side-scroll: semua berdiri di satu jalur lantai
+	var lane: float = float(A.floor[1]) - 22.0
+	A.floor = [lane, lane]
+	for key in ["npcs", "enemies", "treasures"]:
+		for d in A.get(key, []):
+			d.pos = Vector2(d.pos.x, lane)
+	for key in ["station", "shop", "gate"]:
+		if A.has(key):
+			A[key] = Vector2(A[key].x, lane)
+	Game.pos.y = lane
 	var bg := LiveBg.new()
 	add_child(bg)
 	bg.setup(A.bg, LiveBg.style_for(A.bg), 1.0, 0 if A.get("wide", false) else A.get("panels", 1))
@@ -87,14 +97,14 @@ func _ready() -> void:
 	player.floor_y = Vector2(A.floor[0], A.floor[1])
 	actors.add_child(player)
 	player.setup({"right": load("res://assets/world/raka_walk_right.png"), "left": load("res://assets/world/raka_walk_left.png"),
-		"up": load("res://assets/world/raka_walk_up.png"), "down": load("res://assets/world/raka_walk_down.png")}, 0.95)
+		"up": load("res://assets/world/raka_walk_up.png"), "down": load("res://assets/world/raka_walk_down.png")}, 1.5)
 	player.position = Game.pos
 	player.face("right")
 	tara = Walker.new()
 	tara.floor_y = player.floor_y
 	actors.add_child(tara)
-	tara.setup({"right": load("res://assets/world/tara_side.png")}, 0.64, true)
-	tara.position = player.position + Vector2(-70, -6)
+	tara.setup({"right": load("res://assets/world/tara_side.png")}, 1.0, true)
+	tara.position = player.position + Vector2(-110, 0)
 	for i in 14:
 		trail.append(tara.position)
 
@@ -148,7 +158,7 @@ func _add_npc(path: String, pos: Vector2, info: Dictionary) -> void:
 	s.texture = load(path)
 	s.offset = Vector2(0, -s.texture.get_height() / 2.0)
 	s.position = pos
-	s.scale = Vector2.ONE * (170.0 / s.texture.get_height()) * float(info.get("scale", 1.0))
+	s.scale = Vector2.ONE * (265.0 / s.texture.get_height()) * float(info.get("scale", 1.0))
 	if info.has("tint"):
 		s.self_modulate = info.tint
 	s.flip_h = info.get("flip", false)
@@ -319,6 +329,7 @@ func _process(delta: float) -> void:
 	if busy:
 		return
 	var v := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	v.y = 0.0
 	if Game.autoplay:
 		v = _auto_dir(delta)
 	if v.length() > 0.1:
@@ -335,14 +346,11 @@ func _process(delta: float) -> void:
 			v = d.normalized()
 	player.moving = v.length() > 0.1
 	if player.moving:
-		var mv := Vector2(v.x, v.y * 0.65) * SPEED * delta
+		var mv := Vector2(v.x, 0.0) * SPEED * 1.3 * delta
 		player.position += mv
 		player.position.x = clampf(player.position.x, 40, world_w - 40)
 		player.position.y = clampf(player.position.y, A.floor[0], A.floor[1])
-		if absf(v.x) > absf(v.y):
-			player.face("right" if v.x > 0 else "left")
-		else:
-			player.face("down" if v.y > 0 else "up")
+		player.face("right" if v.x > 0 else "left")
 		trail.append(player.position)
 		if trail.size() > 16:
 			var p: Vector2 = trail.pop_front()
@@ -704,7 +712,7 @@ class Roamer extends Node2D:
 		sprite = Sprite2D.new()
 		sprite.texture = load(def.sprite)
 		sprite.offset = Vector2(0, -sprite.texture.get_height() / 2.0)
-		var h := 230.0 if boss else (130.0 if def.get("small", false) else 175.0)
+		var h := 340.0 if boss else (200.0 if def.get("small", false) else 270.0)
 		sprite.scale = Vector2.ONE * (h / sprite.texture.get_height())
 		if def.has("tint"):
 			sprite.self_modulate = def.tint

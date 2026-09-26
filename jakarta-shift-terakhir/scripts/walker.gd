@@ -60,6 +60,6 @@ func _process(delta: float) -> void:
 		_t = 0.0
 		sprite.frame = 0 if not side_only else 2
 	var k := clampf((position.y - floor_y.x) / maxf(1.0, floor_y.y - floor_y.x), 0.0, 1.0)
-	var s := base * lerpf(0.82, 1.05, k)
+	var s := base
 	scale = Vector2(s, s)
 	sprite.position.y = -absf(sin(_t * PI / 4.0)) * 3.0 if moving else 0.0

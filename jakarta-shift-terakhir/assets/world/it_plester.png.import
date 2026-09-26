@@ -2,22 +2,22 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dmx3qh4qplqk5"
-path="res://.godot/imported/dukuh_atas.jpg-f944ef2166b9e3ac4d03c37e377cb5d8.ctex"
+uid="uid://dxa6wnidmm8or"
+path="res://.godot/imported/it_plester.png-b1b3c43183d9100a849e82051457fee1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/bg/dukuh_atas.jpg"
-dest_files=["res://.godot/imported/dukuh_atas.jpg-f944ef2166b9e3ac4d03c37e377cb5d8.ctex"]
+source_file="res://assets/world/it_plester.png"
+dest_files=["res://.godot/imported/it_plester.png-b1b3c43183d9100a849e82051457fee1.ctex"]
 
 [params]
 
-compress/mode=1
+compress/mode=0
 compress/high_quality=false
-compress/lossy_quality=0.82
+compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1

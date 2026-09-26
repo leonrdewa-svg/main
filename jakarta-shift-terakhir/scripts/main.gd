@@ -1,53 +1,22 @@
 extends Node
-## Scene manager: Judul -> Cerita -> Babak 1 -> Cerita -> Babak 2 (boss)
-## -> Ending. Transisi pakai sobekan kertas.
-
-const STORY := {
-	"intro": [
-		["narator", "", "Jakarta, 18.47. Stasiun MRT Dukuh Atas. Jam pulang kantor."],
-		["tara", "tired", "Akhirnya... pulang. Delapan jam rapat yang harusnya cukup jadi email."],
-		["raka", "happy", "Semangat, Tar! Tinggal tap kartu, duduk, tidur sampai Blok M."],
-		["tara", "normal", "Raka... kenapa orang-orang kantor jalannya kayak zombie gitu?"],
-		["raka", "normal", "Hah? Itu Pak Dedi dari Finance... kok kepalanya jadi jam dinding?"],
-		["deadline", "", "TIK. TAK. TIK. TAK. WAKTU... TIDAK PERNAH... CUKUP."],
-		["tara", "focus", "Mereka DIRASUKI LEMBUR! Raka, siapin payungmu!"],
-		["raka", "focus", "Nggak ada yang boleh ganggu jam pulangku!"],
-	],
-	"mid": [
-		["narator", "", "Blok M, 21.15. Warung kopi masih buka. HP & Semangat pulih sepenuhnya!"],
-		["raka", "happy", "Kopi susu dua, Bu! ...Ahh, hidup lagi."],
-		["tara", "happy", "Tadi kamu teriak 'JAM PULANGKU' kenceng banget lho."],
-		["raka", "normal", "...Nggak usah dibahas."],
-		["tara", "normal", "Tunggu. Udaranya berat... kayak hari Senin pagi."],
-		["lembur", "", "KERJA. MASIH. BISA. LEBIH. BANYAK."],
-		["raka", "focus", "Itu sumbernya! Bos terakhir: LEMBUR!"],
-		["tara", "focus", "Ini shift terakhir kita. Ayo selesaikan!"],
-	],
-	"end": [
-		["narator", "", "Kertas-kertas lembur beterbangan, lalu lenyap tertiup angin malam Jakarta."],
-		["tara", "happy", "Jadi... besok masuk jam berapa?"],
-		["raka", "tired", "Jangan. Sebut. Kerjaan."],
-		["tara", "happy", "Hahaha! Yuk, pulang. Kali ini beneran pulang."],
-	],
-}
+## Scene manager: Judul -> Dunia (eksplorasi) <-> Battle / Peta MRT / Warung
+## -> Menara Shift -> Ending. Transisi sobekan kertas.
 
 var current: Node
-var fade_layer: CanvasLayer
 var wipe: Polygon2D
 var dialog: Dialogue
-var dialog_layer: CanvasLayer
 
 
 func _ready() -> void:
 	randomize()
-	dialog_layer = CanvasLayer.new()
-	dialog_layer.layer = 50
-	add_child(dialog_layer)
+	var dl := CanvasLayer.new()
+	dl.layer = 50
+	add_child(dl)
 	dialog = Dialogue.new()
-	dialog_layer.add_child(dialog)
-	fade_layer = CanvasLayer.new()
-	fade_layer.layer = 100
-	add_child(fade_layer)
+	dl.add_child(dialog)
+	var fl := CanvasLayer.new()
+	fl.layer = 100
+	add_child(fl)
 	wipe = Polygon2D.new()
 	wipe.color = Game.INK
 	var pts := PackedVector2Array([Vector2(-40, -40)])
@@ -56,7 +25,7 @@ func _ready() -> void:
 	pts.append(Vector2(-40, 800))
 	wipe.polygon = pts
 	wipe.position.x = -1500
-	fade_layer.add_child(wipe)
+	fl.add_child(wipe)
 	_title()
 
 
@@ -72,77 +41,191 @@ func cover() -> void:
 	Sfx.play("sfx_paper", -2.0, 0.7)
 	wipe.position.x = -1500
 	var tw := create_tween()
-	tw.tween_property(wipe, "position:x", 0.0, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(wipe, "position:x", 0.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await tw.finished
 
 
 func reveal() -> void:
 	var tw := create_tween()
-	tw.tween_property(wipe, "position:x", 1500.0, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tw.tween_property(wipe, "position:x", 1500.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	await tw.finished
 	wipe.position.x = -1500
 
+
+# ------------------------------------------------------------------ judul
 
 func _title() -> void:
 	var t := TitleScreen.new()
 	_swap(t)
 	await t.start
+	var opts := []
+	if Game.has_save():
+		opts.append({"id": "load", "label": "Lanjutkan", "icon": "res://assets/ui/icon_star.png", "desc": "Lanjut dari simpanan terakhir."})
+	opts.append({"id": "new", "label": "Main Baru", "icon": "res://assets/ui/icon_sp.png", "desc": "Mulai cerita dari awal (sekitar 1 jam)."})
+	var m := CommandMenu.new()
+	t.add_child(m)
+	var c = "new"
+	if not Game.autoplay or Game.has_save():
+		c = await m.open(opts, "", Vector2(515, 540), false)
 	await cover()
-	Game.new_run()
-	await _story("intro", "res://assets/bg/dukuh_atas.jpg", "bgm_title")
-	await _battle(1)
+	if c == "load" and Game.load_game():
+		_world(Game.area)
+	else:
+		Game.new_run()
+		_world("dukuh", true)
 
 
-## Adegan cerita di atas latar panggung.
-func _story(key: String, bg_path: String, music: String) -> void:
-	var root := Node2D.new()
-	var bg := Sprite2D.new()
-	bg.texture = load(bg_path)
-	bg.position = Vector2(640, 360)
-	var s := maxf(1280.0 / bg.texture.get_width(), 720.0 / bg.texture.get_height()) * 1.05
-	bg.scale = Vector2(s, s)
-	root.add_child(bg)
-	var shade := ColorRect.new()
-	shade.size = Vector2(1280, 720)
-	shade.color = Color(0, 0, 0, 0.25)
-	root.add_child(shade)
-	# Pemeran berdiri di panggung
-	var cast := {"tara": Vector2(760, 560), "raka": Vector2(560, 550)}
-	for id in cast:
-		var sp := Sprite2D.new()
-		sp.texture = load(Game.HEROES[id].idle)
-		sp.offset = Vector2(0, -sp.texture.get_height() / 2.0)
-		sp.position = cast[id]
-		sp.scale = Vector2.ONE * Game.HEROES[id].scale * 0.9
-		root.add_child(sp)
-		var tw := sp.create_tween().set_loops()
-		tw.tween_property(sp, "skew", 0.03, 1.2).set_trans(Tween.TRANS_SINE)
-		tw.tween_property(sp, "skew", -0.03, 1.2).set_trans(Tween.TRANS_SINE)
-	_swap(root)
-	Sfx.music(music)
+# ------------------------------------------------------------------ dunia
+
+func _world(area: String, intro := false) -> void:
+	Game.area = area
+	var w := World.new()
+	w.area_id = area
+	_swap(w)
 	await reveal()
-	Game.shot("cerita_" + key)
-	await dialog.play(STORY[key])
+	Game.shot("dunia_" + area)
+	if intro:
+		await w.talk(Story.D.intro)
+	_continue_world(w, area)
+
+
+func _battle(area: String, def: Dictionary, strike: String) -> void:
 	await cover()
-
-
-func _battle(n: int) -> void:
 	var b := Battle.new()
-	b.stage_no = n
+	b.bg_path = Story.AREAS[area].bg
+	b.group = def.group
+	b.first_strike = strike
+	b.music = "bgm_boss" if def.get("boss", false) else "bgm_battle"
+	if def.get("boss", false):
+		b.title = "BOS: " + Game.enemy_data(def.group[0]).name.to_upper()
 	_swap(b)
 	await reveal()
 	var result := await b.run()
 	await cover()
 	if result == "win":
-		if n == 1:
-			Game.full_heal()
-			await _story("mid", "res://assets/bg/blok_m.jpg", "bgm_title")
-			await _battle(2)
-		else:
-			await _story("end", "res://assets/bg/blok_m.jpg", "bgm_title")
-			await _ending()
+		Game.set_flag("def_" + def.id)
+		Game.area = area
+		var w := World.new()
+		w.area_id = area
+		_swap(w)
+		await reveal()
+		if def.has("post"):
+			await w.talk(Story.D[def.post])
+			Game.set_flag(def.card)
+			Sfx.play("sfx_star")
+		if area == "dukuh" and not Game.flag("prolog_done") and Game.flag("def_da_1") and Game.flag("def_da_2"):
+			await w.talk(Story.D.prolog_done)
+			Game.set_flag("prolog_done")
+		w.refresh_ui()
+		Game.save_game()
+		# lanjutkan loop dunia dengan node yang sudah ada
+		_continue_world(w, area)
 	else:
-		await _game_over(n)
+		await _game_over(area)
+
+
+func _continue_world(w: World, area: String) -> void:
+	var ev: Array = await w.event
+	match ev[0]:
+		"battle":
+			await _battle(area, ev[1].def, ev[1].strike)
+		"station":
+			await _map()
+		"shop":
+			await cover()
+			var s := ShopScreen.new()
+			_swap(s)
+			await reveal()
+			await s.done
+			await cover()
+			_world(area)
+		"gate":
+			await _final()
+		"title":
+			await cover()
+			_title()
+
+
+func _map() -> void:
+	await cover()
+	var m := MapScreen.new()
+	_swap(m)
+	await reveal()
+	var c: String = await m.done
+	await cover()
+	if c == "rest":
+		Game.full_heal()
+		Sfx.play("sfx_heal")
+		Game.save_game()
+		_world(Game.area)
+	elif c == "" or c == Game.area:
+		_world(Game.area)
+	else:
+		Game.pos = Vector2(Story.AREAS[c].station.x + 110, 640)
+		Game.area = c
+		Game.save_game()
+		_world(c)
+
+
+func _final() -> void:
+	var w: World = current
+	await w.talk(Story.D.final_pre)
+	await _battle_final()
+
+
+func _battle_final() -> void:
+	await cover()
+	var b := Battle.new()
+	b.bg_path = Story.AREAS.scbd.bg
+	b.group = ["lembur_abadi"]
+	b.music = "bgm_boss"
+	b.title = "BOS TERAKHIR: LEMBUR ABADI"
+	_swap(b)
+	await reveal()
+	var result := await b.run()
+	await cover()
+	if result == "win":
+		await _ending()
+	else:
+		await _game_over("scbd")
+
+
+func _game_over(area: String) -> void:
+	var v = await _card_screen("KAMU LEMBUR...", Color("ff6a6a"),
+		["Tara dan Raka tumbang. Tapi Bu Sari menemukan kalian dan memberi teh hangat.",
+		 "HP pulih. Kalian kembali ke papan MRT (uang -10%)."],
+		[{"id": "retry", "label": "Bangkit Lagi", "icon": "res://assets/ui/icon_star.png", "desc": ""},
+		 {"id": "title", "label": "Ke Judul", "icon": "res://assets/ui/icon_shield.png", "desc": ""}])
+	await cover()
+	Game.full_heal()
+	Game.money = int(Game.money * 0.9)
+	if v == "retry":
+		Game.pos = Vector2(Story.AREAS[area].station.x + 110, 640)
+		_world(area)
+	else:
+		_title()
+
+
+func _ending() -> void:
+	var root := Node2D.new()
+	var bg := Sprite2D.new()
+	bg.texture = load("res://assets/bg/dukuh_atas.jpg")
+	bg.position = Vector2(640, 360)
+	bg.scale = Vector2.ONE * (1280.0 / bg.texture.get_width())
+	root.add_child(bg)
+	_swap(root)
+	Sfx.music("bgm_title")
+	await reveal()
+	await dialog.play(Story.D.ending)
+	await cover()
+	var mins := int(Game.play_time / 60.0)
+	await _card_screen("SHIFT SELESAI!", Game.YELLOW, [
+		"Terima kasih sudah bermain JAKARTA: SHIFT TERAKHIR!",
+		"Raka Lv %d · Tara Lv %d · Parry %d · Perfect %d · Waktu %d menit" % [Game.party.raka.level, Game.party.tara.level, Game.stats.parry, Game.stats.perfect, mins],
+	], [{"id": "title", "label": "Kembali ke Judul", "icon": "res://assets/ui/icon_star.png", "desc": ""}],
+	["res://assets/sprites/raka_attack.png", "res://assets/sprites/tara_attack.png"])
+	await cover()
+	_title()
 
 
 func _card_screen(title: String, color: Color, lines: Array, options: Array, art: Array = []) -> Variant:
@@ -153,21 +236,19 @@ func _card_screen(title: String, color: Color, lines: Array, options: Array, art
 	bgc.color = Color("201a26")
 	bgc.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(bgc)
-	var conf := Node2D.new()
-	root.add_child(conf)
 	var t := Fx.label(title, 110, color, 20)
 	t.size = Vector2(1280, 150)
-	t.position = Vector2(0, 90)
+	t.position = Vector2(0, 80)
 	t.pivot_offset = Vector2(640, 75)
 	t.rotation = deg_to_rad(-3)
 	root.add_child(t)
-	var y := 270.0
+	var y := 260.0
 	for l in lines:
-		var ll := Fx.label(l, 34, Game.CREAM, 8, Game.FONT_UI)
+		var ll := Fx.label(l, 30, Game.CREAM, 8, Game.FONT_UI)
 		ll.size = Vector2(1280, 44)
 		ll.position = Vector2(0, y)
 		root.add_child(ll)
-		y += 48
+		y += 46
 	for i in art.size():
 		var tr := TextureRect.new()
 		tr.texture = load(art[i])
@@ -176,12 +257,7 @@ func _card_screen(title: String, color: Color, lines: Array, options: Array, art
 		tr.size = Vector2(300, 320)
 		tr.position = Vector2(30 if i == 0 else 950, 380)
 		tr.flip_h = i == 1
-		tr.pivot_offset = tr.size / 2
-		tr.rotation = deg_to_rad(-6 if i == 0 else 6)
 		root.add_child(tr)
-		var tw := tr.create_tween().set_loops()
-		tw.tween_property(tr, "position:y", 368.0, 0.9).set_trans(Tween.TRANS_SINE)
-		tw.tween_property(tr, "position:y", 380.0, 0.9).set_trans(Tween.TRANS_SINE)
 	var menu := CommandMenu.new()
 	root.add_child(menu)
 	_swap(root)
@@ -190,35 +266,4 @@ func _card_screen(title: String, color: Color, lines: Array, options: Array, art
 			Fx.burst(root, Vector2(320 + i * 320, 120), "confetti", 40, 1.0)
 	await reveal()
 	Game.shot("kartu")
-	var v = await menu.open(options, "", Vector2(515, y + 30), false)
-	return v
-
-
-func _ending() -> void:
-	Sfx.music("bgm_title")
-	var lines := [
-		"Terima kasih sudah main demo JAKARTA: SHIFT TERAKHIR!",
-		"NICE! x%d     GUARD! x%d     Ronde: %d" % [Game.stats.nice, Game.stats.guard, Game.stats.turns],
-	]
-	var v = await _card_screen("DEMO SELESAI!", Game.YELLOW, lines,
-		[{"id": "title", "label": "Kembali ke Judul", "icon": "res://assets/ui/icon_star.png", "desc": ""}],
-		["res://assets/sprites/raka_attack.png", "res://assets/sprites/tara_attack.png"])
-	await cover()
-	_title()
-
-
-func _game_over(n: int) -> void:
-	Sfx.music("bgm_title")
-	var v = await _card_screen("KAMU LEMBUR...", Color("ff6a6a"),
-		["Tara dan Raka tumbang. Kantor menang malam ini.", "Tapi besok masih ada kesempatan!"],
-		[{"id": "retry", "label": "Coba Lagi", "icon": "res://assets/ui/icon_star.png", "desc": ""},
-		 {"id": "title", "label": "Ke Judul", "icon": "res://assets/ui/icon_shield.png", "desc": ""}],
-		["res://assets/sprites/face_raka_lelah.png", "res://assets/sprites/face_tara_lelah.png"])
-	await cover()
-	if v == "retry":
-		Game.full_heal()
-		for id in Game.ITEMS:
-			Game.bag[id] = max(Game.bag[id], 1)
-		await _battle(n)
-	else:
-		_title()
+	return await menu.open(options, "", Vector2(515, y + 30), false)

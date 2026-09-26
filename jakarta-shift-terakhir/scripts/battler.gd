@@ -29,6 +29,7 @@ var drop: Sprite2D
 var ground: Polygon2D
 var tex_idle: Texture2D
 var tex_attack: Texture2D
+var tex_kick: Texture2D
 var base_scale := 0.4
 var idle_anim := true
 var _t := 0.0
@@ -135,10 +136,21 @@ func _process(delta: float) -> void:
 
 
 func set_pose(pose: String) -> void:
+	if not is_instance_valid(sprite):
+		return
+	if pose == "kick" and tex_kick:
+		_apply_tex(tex_kick)
+		idle_anim = false
+		sprite.scale = Vector2.ONE * (height() / tex_kick.get_height())
+		drop.scale = sprite.scale
+		return
 	_apply_tex(tex_attack if pose == "attack" else tex_idle)
 	if pose == "attack":
+		idle_anim = false
 		sprite.scale = Vector2.ONE * base_scale * 0.92
 		drop.scale = sprite.scale
+	elif alive:
+		idle_anim = true
 
 
 ## Efek flip kertas (ganti pose di tengah flip).

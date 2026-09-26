@@ -69,7 +69,7 @@ func _ready() -> void:
 	main.size = Vector2(1000, 160)
 	main.position = Vector2(-500, -84)
 	logo.add_child(main)
-	var sub := Fx.label("— DEMO RPG KERTAS —", 30, Game.YELLOW, 9)
+	var sub := Fx.label("— RPG JELAJAH JAKARTA —", 30, Game.YELLOW, 9)
 	sub.size = Vector2(600, 40)
 	sub.position = Vector2(-300, 80)
 	logo.add_child(sub)

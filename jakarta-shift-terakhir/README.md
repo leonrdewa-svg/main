@@ -1,65 +1,48 @@
-# JAKARTA: SHIFT TERAKHIR — Demo
+# JAKARTA: SHIFT TERAKHIR
 
-Demo RPG turn-based bergaya *paper* (terinspirasi Paper Mario) di Godot 4.
-Tara & Raka pulang kantor, tapi rekan-rekan kerjanya **Dirasuki Lembur**.
+RPG jelajah Jakarta (±1 jam) di Godot 4. Tara & Raka membebaskan pekerja yang
+**Dirasuki Lembur**, mengumpulkan 3 Kartu Akses, lalu menyerbu Menara Shift di SCBD.
 
 ## Cara main
 
-1. Install **Godot 4.5+** (dites di **4.7 stable**).
-2. Buka Godot → *Import* → pilih `jakarta-shift-terakhir/project.godot`.
-3. Tekan **F5**.
+Godot **4.5+** (dites 4.7) → Import `project.godot` → **F5**. Progres tersimpan otomatis.
 
-| Tombol | Fungsi |
-|---|---|
-| `Z` / `Spasi` / `Enter` / klik kiri | pilih menu, lanjut dialog, **action command** |
-| `X` / `Esc` / klik kanan | batal / kembali |
-| Panah / mouse | navigasi menu & target |
+| Tombol | Eksplorasi | Battle |
+|---|---|---|
+| Panah / WASD / klik | jalan | pilih menu, tombol QTE |
+| `Z` / Spasi / klik kiri | bicara, **serang duluan** | pilih, **PARRY** |
+| `X` / klik kanan | menu | **DODGE**, batal |
+| `C` / Tab | menu (Tas, Status, Simpan) | - |
 
-## Isi demo
+## Isi
 
-- **Judul → cerita → Babak 1 (Dukuh Atas) → cerita → Babak 2 / Boss (Blok M) → ending**
-- **Turn-based bergantian**: Raka & Tara memilih aksi, lalu musuh menyerang.
-- **Action command ala Paper Mario**
-  - *Lompat Payung* (Raka): tekan Z pas mendarat untuk lompat lagi (maks. 3 hit).
-  - *Tampar Kipas* (Tara): tekan Z saat lingkaran menyusut pas di target.
-  - *Badai Kertas*: tekan Z berulang-ulang (serang semua musuh).
-  - *Tusukan Payung*: tahan Z, lepas di zona hijau.
-  - **GUARD**: tekan Z tepat sebelum serangan musuh kena (damage -1).
-- **Jurus** pakai Semangat (SP), **Item** (Kopi Susu, Es Teh Manis, Nasi Goreng, Kartu MRT → kereta lewat!), **Bertahan**.
-- **Musuh**: Deadline (serang 2x tiap 3 giliran), Revisi (heal teman / turunkan ATK),
-  Target (buff ATK), **LEMBUR** (boss: serang semua + charge serangan besar).
-- **Efek**: tirai panggung, flip kertas, squash & stretch, angka damage starburst,
-  partikel kertas/struk/confetti, cut-in jurus, speed lines, screen shake, ekspresi wajah HUD.
-- **Audio**: BGM (judul, battle, boss), jingle menang/kalah, ±30 SFX — semua dibuat prosedural.
+- **5 area**: Dukuh Atas, Monas, Kota Tua, Blok M, SCBD. Pindah area lewat **papan MRT** (peta), istirahat & simpan di sana.
+- **Musuh berkeliaran**: sentuh = diserang duluan; tekan Z dari dekat = **Serangan Pertama** (musuh -15% HP).
+- **Battle gaya Expedition 33**
+  - Timeline giliran berdasar SPD.
+  - Serang = combo pukulan & tendangan, tiap hit ikuti tombol QTE (Z, X, panah). PERFECT = damage lebih besar.
+  - Musuh menyerang dengan ritme berbeda-beda: **PARRY** (Z, jendela sempit) atau **DODGE** (X, lebih longgar).
+    Hit merah = tidak bisa di-parry. Parry semua hit = **COUNTER**.
+  - **AP** untuk jurus (Tinju Komuter, Tendangan Putar, Sapuan Kaki, Badai Dokumen, dll).
+  - Meter **SEMANGAT** penuh = **Pamungkas** duo.
+- **Level & EXP**, uang Rupiah, **Warung Bu Sari** (beli nasi bungkus, kopi susu, dll).
+- **4 bos** + fase 2 bos terakhir. Pekerja yang dikalahkan kembali normal dan bisa diajak bicara.
 
 ## Struktur
 
 ```
 scripts/
-  game.gd            autoload: data karakter/musuh/item, state party, input, theme
-  sfx.gd             autoload: SFX pool + musik crossfade
-  main.gd            alur scene (judul, cerita, battle, ending, game over)
-  battle.gd          loop turn-based, aksi hero, AI musuh
-  battler.gd         unit kertas (animasi idle, lompat, flip, hit, tumbang)
-  action_command.gd  timing / mash / hold / guard
-  fx.gd              efek visual (starburst, partikel, cut-in, kereta MRT)
-  command_menu.gd, hud.gd, dialogue.gd, stage.gd, title_screen.gd
-assets/  bg/ sprites/ ui/ audio/ fonts/
-addons/godot_ai/     plugin Godot AI (MCP) — sudah di-enable
+  game.gd        data karakter/musuh/item, party, simpan/muat, input
+  story.gd       area, NPC, musuh, dialog
+  main.gd        alur: judul, dunia, battle, peta, warung, ending
+  world.gd       eksplorasi (pemain, Tara, NPC, musuh berkeliaran)
+  walker.gd      animasi jalan 8 frame
+  battle.gd      battle QTE + parry/dodge/counter
+  battle_hud.gd  HP, AP, Semangat, timeline
+  qte.gd         prompt tombol + jendela parry/dodge
+  map_screen.gd, shop.gd, dialogue.gd, command_menu.gd, fx.gd, battler.gd
 ```
 
-Semua scene dibangun lewat kode (`scenes/main.tscn` hanya root), jadi mudah dimodifikasi.
-Data stat/jurus/item ada di `scripts/game.gd`.
+Tes otomatis: `godot --path . -- --autoplay --shots=/tmp/shots`.
 
-## Tes otomatis
-
-```
-godot --path . -- --autoplay --shots=/tmp/shots
-```
-Game dimainkan otomatis dari judul sampai ending, screenshot disimpan tiap 0.8 detik.
-
-## Kredit
-
-- Art karakter & latar: dari user (character sheet Tara, Raka, Dirasuki Lembur; latar Dukuh Atas & Blok M).
-- Font: Bangers, Archivo Narrow (SIL Open Font License).
-- Plugin: Godot AI (MIT).
+Kredit: art dari user; font Bangers & Archivo Narrow (OFL); plugin Godot AI (MIT).

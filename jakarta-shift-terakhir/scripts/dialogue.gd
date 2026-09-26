@@ -81,6 +81,9 @@ func _speaker(id: String, mood: String) -> Dictionary:
 	if Game.ENEMIES.has(id):
 		var e: Dictionary = Game.ENEMIES[id]
 		return {"name": e.name, "color": e.color, "tex": load("res://assets/sprites/core_%s.png" % id)}
+	if Game.NPCS.has(id):
+		var n: Dictionary = Game.NPCS[id]
+		return {"name": n.name, "color": n.color, "tex": load(n.tex)}
 	return {"name": id, "color": Color("3a3440"), "tex": null}
 
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dmx3qh4qplqk5"
-path="res://.godot/imported/dukuh_atas.jpg-f944ef2166b9e3ac4d03c37e377cb5d8.ctex"
+uid="uid://b10i4dwy8bmwk"
+path="res://.godot/imported/warung_scene.jpg-7cd3cea3d61a080b7634016a2b359161.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/bg/dukuh_atas.jpg"
-dest_files=["res://.godot/imported/dukuh_atas.jpg-f944ef2166b9e3ac4d03c37e377cb5d8.ctex"]
+source_file="res://assets/world/warung_scene.jpg"
+dest_files=["res://.godot/imported/warung_scene.jpg-7cd3cea3d61a080b7634016a2b359161.ctex"]
 
 [params]
 

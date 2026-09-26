@@ -1,60 +1,64 @@
 class_name Battle
 extends Node2D
-## Arena pertarungan turn-based ala Paper Mario.
-## Party (Tara, Raka) bergiliran memilih aksi -> musuh bergiliran menyerang.
+## Pertarungan turn-based reaktif (gaya Expedition 33):
+##  - urutan giliran berdasarkan SPD (timeline di atas)
+##  - serangan = combo pukulan/tendangan dengan QTE urutan tombol
+##  - saat musuh menyerang: PARRY (Z, sempit) / DODGE (X, lebar);
+##    parry semua hit -> COUNTER
+##  - AP untuk jurus, meter SEMANGAT untuk Pamungkas duo
 
 signal finished(result: String)
 signal _nav(kind: String, pos: Vector2)
 
-const STAGES := {
-	1: {"bg": "res://assets/bg/dukuh_atas.jpg", "music": "bgm_battle",
-		"title": "BABAK 1", "sub": "Stasiun MRT Dukuh Atas  ·  18.47",
-		"enemies": [["deadline", Vector2(900, 632)], ["revisi", Vector2(1100, 626)]]},
-	2: {"bg": "res://assets/bg/blok_m.jpg", "music": "bgm_boss",
-		"title": "BABAK 2", "sub": "Blok M  ·  21.15",
-		"enemies": [["target", Vector2(885, 636)], ["lembur", Vector2(1105, 630)]]},
-}
-const HERO_POS := {"raka": Vector2(215, 628), "tara": Vector2(400, 640)}
-const MENU_POS := Vector2(505, 300)
+const HERO_POS := {"raka": Vector2(250, 628), "tara": Vector2(430, 640)}
+const MENU_POS := Vector2(540, 250)
+const KEYS := ["Z", "X", "L", "R", "U", "D"]
 
-var stage_no := 1
+var bg_path := "res://assets/bg/dukuh_atas.jpg"
+var group: Array = ["deadline"]
+var music := "bgm_battle"
+var first_strike := ""   # "player" / "enemy" / ""
+var title := ""
+
 var world: Node2D
 var units: Node2D
 var cam: Camera2D
-var stage: Stage
 var ui: CanvasLayer
 var cutin_layer: CanvasLayer
-var hud: Hud
+var hud: BattleHud
 var menu: CommandMenu
-var ac: ActionCmd
+var qte: Qte
 var heroes: Array = []
 var enemies: Array = []
+var ap := {}
+var meter := 0.0
+var atk_buff := 0
 var round_no := 0
 var _trauma := 0.0
 var _nav_on := false
 var _arrows: Array = []
-var _aura := {}
+var _phase2_done := false
 
 
 func _ready() -> void:
-	var st: Dictionary = STAGES[stage_no]
 	world = Node2D.new()
 	add_child(world)
 	var bg := Sprite2D.new()
-	bg.texture = load(st.bg)
+	bg.texture = load(bg_path)
 	bg.position = Vector2(640, 360)
-	var s := maxf(1280.0 / bg.texture.get_width(), 720.0 / bg.texture.get_height()) * 1.05
+	var s := maxf(1280.0 / bg.texture.get_width(), 720.0 / bg.texture.get_height()) * 1.06
 	bg.scale = Vector2(s, s)
 	world.add_child(bg)
-	world.add_child(_vignette())
+	var dim := ColorRect.new()
+	dim.size = Vector2(1400, 800)
+	dim.position = Vector2(-60, -40)
+	dim.color = Color(0.05, 0.02, 0.08, 0.28)
+	world.add_child(dim)
 	units = Node2D.new()
 	units.y_sort_enabled = true
 	world.add_child(units)
-	ac = ActionCmd.new()
-	world.add_child(ac)
-	stage = Stage.new()
-	stage.z_index = 20
-	world.add_child(stage)
+	qte = Qte.new()
+	world.add_child(qte)
 	cam = Camera2D.new()
 	cam.position = Vector2(640, 360)
 	world.add_child(cam)
@@ -63,50 +67,52 @@ func _ready() -> void:
 	ui = CanvasLayer.new()
 	ui.layer = 10
 	add_child(ui)
-	hud = Hud.new()
-	ui.add_child(hud)
-	menu = CommandMenu.new()
-	ui.add_child(menu)
-	menu.desc_panel.position = Vector2(232, 648)
-	menu.desc_panel.custom_minimum_size = Vector2(560, 56)
-	menu.desc_panel.size = Vector2(560, 56)
-	cutin_layer = CanvasLayer.new()
-	cutin_layer.layer = 20
-	add_child(cutin_layer)
-
 	for id in ["raka", "tara"]:
 		var b := Battler.new()
 		units.add_child(b)
 		b.setup(id, Game.HEROES[id], true)
+		b.atk = Game.party[id].atk
 		b.position = HERO_POS[id]
 		b.home = b.position
+		var side: Texture2D = load(Game.HEROES[id].side)
+		var at := AtlasTexture.new()
+		at.atlas = side
+		var fw := side.get_width() / 8.0
+		at.region = Rect2(fw * 3, 0, fw, side.get_height())
+		b.tex_kick = at
 		heroes.append(b)
-	for pair in st.enemies:
+		ap[id] = 1
+	var n := group.size()
+	for i in n:
+		var d := Game.enemy_data(group[i])
 		var e := Battler.new()
 		units.add_child(e)
-		e.setup(pair[0], Game.ENEMIES[pair[0]], false)
-		e.position = pair[1]
+		e.setup(d.kind, d, false)
+		e.display_name = d.name
+		e.boss = d.get("boss", false)
+		if d.has("tint"):
+			e.sprite.self_modulate = d.tint
+		var x := 1050.0 if n == 1 else lerpf(880.0, 1130.0, float(i) / (n - 1))
+		if n == 3:
+			x = [850.0, 1010.0, 1170.0][i]
+		e.position = Vector2(x, 630 + (i % 2) * 12)
 		e.home = e.position
 		enemies.append(e)
 
-
-func _vignette() -> Sprite2D:
-	var g := Gradient.new()
-	g.set_color(0, Color(0, 0, 0, 0))
-	g.set_color(1, Color(0.05, 0.02, 0.08, 0.55))
-	g.add_point(0.55, Color(0, 0, 0, 0.05))
-	var gt := GradientTexture2D.new()
-	gt.gradient = g
-	gt.fill = GradientTexture2D.FILL_RADIAL
-	gt.fill_from = Vector2(0.5, 0.45)
-	gt.fill_to = Vector2(1.1, 1.1)
-	gt.width = 256
-	gt.height = 144
-	var sp := Sprite2D.new()
-	sp.texture = gt
-	sp.position = Vector2(640, 360)
-	sp.scale = Vector2(5, 5)
-	return sp
+	hud = BattleHud.new()
+	hud.battle = self
+	ui.add_child(hud)
+	menu = CommandMenu.new()
+	ui.add_child(menu)
+	menu.desc_panel.position = Vector2(232, 650)
+	menu.desc_panel.custom_minimum_size = Vector2(620, 56)
+	menu.desc_panel.size = Vector2(620, 56)
+	var pad := TouchPad.new()
+	pad.qte = qte
+	ui.add_child(pad)
+	cutin_layer = CanvasLayer.new()
+	cutin_layer.layer = 20
+	add_child(cutin_layer)
 
 
 func _process(delta: float) -> void:
@@ -135,148 +141,192 @@ func _rand_hero() -> Battler:
 	return l[randi() % l.size()] if not l.is_empty() else null
 
 
+func add_meter(v: float) -> void:
+	meter = clampf(meter + v, 0.0, 100.0)
+	hud.refresh()
+
+
+func add_ap(id: String, v: int) -> void:
+	ap[id] = clampi(ap[id] + v, 0, 9)
+	hud.refresh()
+
+
 # =====================================================================
-# ALUR UTAMA
+# ALUR
 # =====================================================================
 
 func run() -> String:
-	var st: Dictionary = STAGES[stage_no]
-	stage.caption = st.title
-	stage.sub_caption = st.sub
-	stage.openness = 0.0
+	Sfx.music(music)
 	for h in heroes:
-		h.position.x = -220
+		h.position.x -= 400
 	for e in enemies:
-		e.position.y = e.home.y - 760
-	Sfx.music(st.music)
-	await wait(1.0)
-	Game.shot("tirai")
-	await stage.open_curtain()
-	# Hero melompat masuk
+		e.position.x += 500
+	hud.refresh()
+	# Masuk arena
+	var tw := create_tween().set_parallel()
 	for h in heroes:
-		h.jump_to(h.home, 0.55, 150)
-		await wait(0.15)
-	await wait(0.4)
-	# Musuh jatuh dari atas
+		tw.tween_property(h, "position:x", h.home.x, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	for e in enemies:
-		var tw: Tween = e.create_tween()
-		tw.tween_property(e, "position:y", e.home.y, 0.55).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-		tw.tween_callback(_land_fx.bind(e))
-		await wait(0.2)
-	await wait(0.7)
+		tw.tween_property(e, "position:x", e.home.x, 0.55).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	Sfx.play("sfx_paper", 0.0, 0.8)
+	await tw.finished
 	for h in heroes:
 		h.idle_anim = h.alive
-	if stage_no == 2:
-		await _boss_intro()
-	else:
-		menu.say("Kolega kantor DIRASUKI LEMBUR! Kalahkan mereka!")
-		await wait(1.3)
-		menu.say("TIP: Saat musuh menyerang, tekan Z tepat sebelum kena untuk GUARD!")
-		await wait(1.6)
-	Game.shot("mulai")
+	var banner := title if title != "" else "PERTARUNGAN!"
+	Fx.pop_text(world, Vector2(640, 250), banner, Game.YELLOW, 84, 0.7)
+	await wait(0.9)
+	if first_strike == "player":
+		Fx.pop_text(world, Vector2(640, 330), "SERANGAN PERTAMA!", Color("7dff8a"), 60, 0.6)
+		Sfx.play("sfx_hit_big")
+		for e in enemies:
+			await _hit_enemy(e, int(e.max_hp * 0.15), true)
+		await wait(0.5)
+	elif first_strike == "enemy":
+		Fx.pop_text(world, Vector2(640, 330), "DISERGAP!", Color("ff6a6a"), 60, 0.6)
+		await wait(0.7)
+	if Game.stats.battles == 0:
+		menu.say("TIP: saat musuh menyerang, tekan Z tepat sebelum kena = PARRY. X = DODGE (lebih mudah).")
+		await wait(2.4)
+	Game.shot("battle_mulai")
 	var result := await _loop()
 	finished.emit(result)
 	return result
 
 
-func _land_fx(e: Battler) -> void:
-	Sfx.play("sfx_land", 0.0, 0.8 if e.boss else 1.0)
-	Fx.burst(world, e.global_position, "paper", 10, 0.6)
-	shake(0.35 if e.boss else 0.15)
-
-
-func _boss_intro() -> void:
-	var boss: Battler = enemies[1]
-	menu.say("LEMBUR: \"Kerja. Masih. Bisa. Lebih. Banyak.\"")
-	await wait(0.6)
-	Sfx.play("sfx_boss_roar")
-	shake(0.9)
-	boss.flash(Game.PINK, 0.8, 0.8)
-	Fx.speed_lines(world, boss.center(), 0.9, Color(1, 0.2, 0.5, 0.7))
-	Fx.burst(world, boss.center(), "glow", 30, 1.2)
-	Fx.pop_text(world, boss.top() + Vector2(0, 40), "LEMBUR!", Game.PINK, 90, 1.0)
-	Game.shot("boss")
-	await wait(1.8)
+func _order() -> Array:
+	var list := _alive(heroes) + _alive(enemies)
+	list.sort_custom(func(a, b):
+		var sa: int = Game.party[a.id].spd if a.is_hero else Game.ENEMIES[a.id].spd
+		var sb: int = Game.party[b.id].spd if b.is_hero else Game.ENEMIES[b.id].spd
+		if sa == sb:
+			return a.is_hero
+		return sa > sb)
+	if round_no == 1 and first_strike == "enemy":
+		list.sort_custom(func(a, b): return (not a.is_hero) and b.is_hero)
+	return list
 
 
 func _loop() -> String:
 	while true:
 		round_no += 1
-		Game.stats.turns += 1
-		# --- giliran party
-		for h in heroes:
-			if not h.alive or _alive(enemies).is_empty():
+		var order := _order()
+		hud.set_order(order)
+		for u in order:
+			if not u.alive:
 				continue
-			h.defending = false
-			h.refresh_status_icons()
-			var act: Dictionary = await _choose(h)
-			await _do_hero_action(h, act)
+			if _alive(enemies).is_empty() or _alive(heroes).is_empty():
+				break
+			hud.set_current(u)
+			if u.is_hero:
+				await _hero_turn(u)
+			else:
+				await _enemy_turn(u)
 			await _cleanup_dead()
+			await _check_phase2()
+			hud.pop_order()
 		if _alive(enemies).is_empty():
 			return await _victory()
-		# --- giliran musuh
-		hud.set_active("")
-		for e in enemies:
-			if not e.alive or _alive(heroes).is_empty():
-				continue
-			await _enemy_turn(e)
-			await _cleanup_dead()
-			await wait(0.2)
 		if _alive(heroes).is_empty():
 			return await _defeat()
-		_end_round()
+		if atk_buff > 0:
+			atk_buff -= 1
+		for h in heroes:
+			if h.atk_down > 0:
+				h.atk_down -= 1
+			h.refresh_status_icons()
 	return "lose"
-
-
-func _end_round() -> void:
-	for h in heroes:
-		if h.atk_down > 0:
-			h.atk_down -= 1
-		if h.guard_up > 0:
-			h.guard_up -= 1
-		h.refresh_status_icons()
 
 
 func _cleanup_dead() -> void:
 	for e in enemies:
 		if e.alive and e.hp <= 0:
-			if _aura.has(e):
-				_aura[e].queue_free()
-				_aura.erase(e)
 			await e.knock_out()
 
 
+func _check_phase2() -> void:
+	for e in enemies:
+		var d := Game.enemy_data(group[enemies.find(e)])
+		if e.alive and d.get("final", false) and not _phase2_done and e.hp <= e.max_hp / 2:
+			_phase2_done = true
+			e.charging = false
+			Sfx.play("sfx_boss_roar")
+			shake(0.9)
+			e.flash(Game.PINK, 1.0, 0.9)
+			e.sprite.self_modulate = Color(0.95, 0.45, 0.75)
+			Fx.speed_lines(world, e.center(), 1.0, Color(1, 0.2, 0.5, 0.7))
+			Fx.burst(world, e.center(), "glow", 40, 1.3)
+			await Fx.cut_in(cutin_layer, e.tex_idle, "FASE 2: SETIAP HARI. SELAMANYA.", Game.PINK, true)
+			e.atk += 3
+			e.set_meta("fast", true)
+
+
 # =====================================================================
-# PILIH AKSI
+# GILIRAN HERO
 # =====================================================================
 
-func _choose(h: Battler) -> Dictionary:
-	hud.set_active(h.id)
-	var d: Dictionary = h.data
+func _hero_turn(h: Battler) -> void:
+	h.defending = false
+	h.refresh_status_icons()
+	if h.get_meta("stun", false):
+		h.set_meta("stun", false)
+		return
 	var spot := _turn_marker(h)
+	var act := await _choose(h)
+	spot.queue_free()
+	menu.close()
+	_clear_arrows()
+	match act.kind:
+		"attack":
+			await _combo(h, act.target, 2, 1.0, false)
+			add_ap(h.id, 1)
+		"skill":
+			add_ap(h.id, -act.skill.ap)
+			await _skill(h, act.skill, act.target)
+		"item":
+			await _use_item(h, act.item, act.target)
+		"focus":
+			add_ap(h.id, 2)
+			h.defending = true
+			Sfx.play("sfx_buff")
+			Fx.ring(world, h.center(), Color("ffd23f"), 160)
+			Fx.pop_text(world, h.top() + Vector2(0, -30), "FOKUS +2 AP", Game.YELLOW, 48, 0.6)
+			h.refresh_status_icons()
+			await wait(0.8)
+		"ultimate":
+			meter = 0
+			hud.refresh()
+			await _ultimate()
+	hud.refresh()
+
+
+func _choose(h: Battler) -> Dictionary:
+	var d: Dictionary = h.data
 	while true:
 		var opts := [
-			{"id": "attack", "label": "Serang", "icon": d.weapon, "desc": "%s: %s" % [d.attack_name, d.attack_desc]},
-			{"id": "skill", "label": "Jurus", "icon": "res://assets/ui/icon_star.png", "enabled": Game.sp >= _min_cost(d),
-				"desc": "Jurus spesial. Pakai Semangat (SP)." if Game.sp >= _min_cost(d) else "Semangat (SP) tidak cukup. Coba Bertahan atau Es Teh Manis."},
+			{"id": "attack", "label": "Serang", "icon": "res://assets/ui/icon_star.png",
+				"desc": "Combo pukulan + tendangan. Ikuti tombol yang muncul. +1 AP."},
+			{"id": "skill", "label": "Jurus", "icon": "res://assets/ui/icon_sp.png",
+				"desc": "Jurus spesial pakai AP. AP kamu: %d" % ap[h.id]},
 			{"id": "item", "label": "Item", "icon": "res://assets/sprites/item_tas.png", "enabled": Game.bag_total() > 0,
-				"desc": "Pakai barang dari tas kerja (%d barang)." % Game.bag_total()},
-			{"id": "defend", "label": "Bertahan", "icon": "res://assets/ui/icon_shield.png", "desc": "Damage -1 sampai giliranmu lagi. +1 SP."},
+				"desc": "Pakai barang dari tas (%d barang)." % Game.bag_total()},
+			{"id": "focus", "label": "Fokus", "icon": "res://assets/ui/icon_shield.png",
+				"desc": "Tarik napas: +2 AP dan damage diterima -30% sampai giliranmu lagi."},
 		]
-		var c = await menu.open(opts, "GILIRAN %s" % String(d.name).to_upper(), MENU_POS, false)
+		if meter >= 100:
+			opts.push_front({"id": "ultimate", "label": "PAMUNGKAS!", "icon": "res://assets/ui/icon_star.png",
+				"desc": "Serangan duo Raka + Tara ke semua musuh!"})
+		var c = await menu.open(opts, "GILIRAN %s  ·  AP %d" % [String(d.name).to_upper(), ap[h.id]], MENU_POS, false)
 		match c:
 			"attack":
 				var t = await _pick_target("enemy")
-				if t == null:
-					continue
-				spot.queue_free()
-				return {"kind": "attack", "target": t}
+				if t != null:
+					return {"kind": "attack", "target": t}
 			"skill":
 				var sopts := []
 				for sk in d.skills:
-					sopts.append({"id": sk.id, "label": sk.name, "right": "%d SP" % sk.cost, "icon": "res://assets/ui/icon_sp.png",
-						"desc": sk.desc, "enabled": Game.sp >= sk.cost})
-				var sid = await menu.open(sopts, "JURUS  (SP %d)" % Game.sp, MENU_POS)
+					sopts.append({"id": sk.id, "label": sk.name, "right": "%d AP" % sk.ap, "icon": "res://assets/ui/icon_sp.png",
+						"desc": sk.desc, "enabled": ap[h.id] >= sk.ap})
+				var sid = await menu.open(sopts, "JURUS  (AP %d)" % ap[h.id], MENU_POS)
 				if sid == null:
 					continue
 				var skill: Dictionary = {}
@@ -284,38 +334,26 @@ func _choose(h: Battler) -> Dictionary:
 					if sk.id == sid:
 						skill = sk
 				var t = await _pick_target(skill.target)
-				if t == null:
-					continue
-				spot.queue_free()
-				return {"kind": "skill", "skill": skill, "target": t}
+				if t != null:
+					return {"kind": "skill", "skill": skill, "target": t}
 			"item":
 				var iopts := []
-				for iid in Game.ITEMS:
-					if Game.bag[iid] > 0:
-						var it: Dictionary = Game.ITEMS[iid]
-						iopts.append({"id": iid, "label": it.name, "right": "x%d" % Game.bag[iid], "icon": it.icon, "desc": it.desc})
-				var iid2 = await menu.open(iopts, "TAS KERJA", MENU_POS)
+				for iid in Game.bag:
+					var it: Dictionary = Game.ITEMS[iid]
+					iopts.append({"id": iid, "label": it.name, "right": "x%d" % Game.bag[iid], "icon": it.icon, "desc": it.desc})
+				var iid2 = await menu.open(iopts, "TAS", MENU_POS)
 				if iid2 == null:
 					continue
 				var t = await _pick_target(Game.ITEMS[iid2].target)
-				if t == null:
-					continue
-				spot.queue_free()
-				return {"kind": "item", "item": iid2, "target": t}
-			"defend":
-				spot.queue_free()
-				return {"kind": "defend"}
+				if t != null:
+					return {"kind": "item", "item": iid2, "target": t}
+			"focus":
+				return {"kind": "focus"}
+			"ultimate":
+				return {"kind": "ultimate"}
 	return {}
 
 
-func _min_cost(d: Dictionary) -> int:
-	var m := 99
-	for sk in d.skills:
-		m = mini(m, sk.cost)
-	return m
-
-
-## Penanda giliran: lingkaran sorot berdenyut di kaki hero.
 func _turn_marker(h: Battler) -> Node2D:
 	var n := Sprite2D.new()
 	n.texture = Fx.GLOW_TEX
@@ -328,7 +366,7 @@ func _turn_marker(h: Battler) -> Node2D:
 	tw.tween_property(n, "modulate:a", 0.35, 0.5)
 	tw.tween_property(n, "modulate:a", 0.8, 0.5)
 	Sfx.play("sfx_blip", -4.0, 1.4)
-	h.paper_flip()
+	hud.mood(h.id, "focus", 0.8)
 	return n
 
 
@@ -352,11 +390,11 @@ func _pick_target(kind: String) -> Variant:
 	while true:
 		_point_at(list if multi else [list[idx]])
 		if multi:
-			menu.say("Target: SEMUA MUSUH.  [Z] pilih   [X] batal")
+			menu.say("Target: SEMUA MUSUH.   [Z] pilih   [X] batal")
 		else:
 			var b: Battler = list[idx]
 			if b.is_hero:
-				menu.say("%s  —  HP %d/%d   [Z] pilih  [X] batal" % [b.display_name, b.hp, b.max_hp])
+				menu.say("%s  HP %d/%d   [Z] pilih  [X] batal" % [b.display_name, b.hp, b.max_hp])
 			else:
 				menu.say("%s  HP %d/%d  —  \"%s\"" % [b.display_name, b.hp, b.max_hp, b.data.quote])
 		var r: Array = await _nav
@@ -380,7 +418,6 @@ func _pick_target(kind: String) -> Variant:
 					result = "all" if multi else hit
 					break
 				idx = list.find(hit)
-				Sfx.play("sfx_select", -6.0)
 	_nav_on = false
 	_clear_arrows()
 	if result != null:
@@ -389,7 +426,7 @@ func _pick_target(kind: String) -> Variant:
 
 
 func _auto_nav() -> void:
-	await wait(0.4)
+	await wait(0.35)
 	if _nav_on:
 		_nav.emit("act", Vector2.ZERO)
 
@@ -436,7 +473,6 @@ class Arrow extends Node2D:
 	func _process(d: float) -> void:
 		t += d
 		position.y = sin(t * 8.0) * 8.0
-		queue_redraw()
 	func _draw() -> void:
 		draw_colored_polygon(PackedVector2Array([Vector2(-16, -28), Vector2(24, -28), Vector2(4, 0)]), Color(0, 0, 0, 0.45))
 		draw_colored_polygon(PackedVector2Array([Vector2(-20, -32), Vector2(20, -32), Vector2(0, -4)]), Game.YELLOW)
@@ -452,7 +488,7 @@ func _point_at(list: Array) -> void:
 		holder.add_child(Arrow.new())
 		world.add_child(holder)
 		_arrows.append(holder)
-		b.flash(Color(1, 1, 0.7), 0.35, 0.45)
+		b.flash(Color(1, 1, 0.7), 0.35, 0.4)
 
 
 func _clear_arrows() -> void:
@@ -462,82 +498,72 @@ func _clear_arrows() -> void:
 
 
 # =====================================================================
-# AKSI HERO
+# SERANGAN HERO (combo QTE)
 # =====================================================================
 
-func _power(h: Battler) -> int:
-	return maxi(1, h.atk - (1 if h.atk_down > 0 else 0))
+func _power(h: Battler) -> float:
+	var p := float(h.atk)
+	if atk_buff > 0:
+		p *= 1.3
+	if h.atk_down > 0:
+		p *= 0.7
+	return p
 
 
-func _do_hero_action(h: Battler, act: Dictionary) -> void:
-	menu.close()
-	hud.set_active("")
-	match act.kind:
-		"attack":
-			if h.id == "tara":
-				await _tara_attack(h, act.target)
-			else:
-				await _raka_attack(h, act.target)
-		"skill":
-			Game.set_sp(Game.sp - act.skill.cost)
-			match act.skill.id:
-				"badai":
-					await _skill_badai(h)
-				"semangat":
-					await _skill_semangat(h, act.target)
-				"tusukan":
-					await _skill_tusukan(h, act.target)
-				"pelindung":
-					await _skill_pelindung(h)
-		"item":
-			await _use_item(h, act.item, act.target)
-		"defend":
-			await _defend(h)
-	hud.refresh()
+func _rand_keys(n: int) -> Array:
+	var ks := []
+	for i in n:
+		ks.append(KEYS[randi() % KEYS.size()])
+	ks[0] = "Z"
+	return ks
 
 
-func _nice(h: Battler, text := "NICE!") -> void:
-	Game.stats.nice += 1
-	Fx.pop_text(world, h.top() + Vector2(0, -40), text, Game.YELLOW, 64)
-	Fx.burst(world, h.top(), "stars", 8, 0.6)
-	Sfx.play("sfx_nice")
-	hud.mood(h.id, "happy")
-
-
-func _hit_enemy(t: Battler, dmg: int, big: bool, _by: Battler = null) -> void:
-	dmg = maxi(1, dmg)
-	t.take_damage(dmg)
-	t.hurt(big or dmg >= 4)
-	Fx.damage_star(world, t.center() + Vector2(46, -40), dmg)
-	Fx.burst(world, t.center(), "paper", 12 + dmg * 2)
-	Sfx.play("sfx_hit_big" if big else "sfx_hit", 0.0, 1.0, 0.08)
-	shake(0.35 if big else 0.2)
-	if big:
-		Fx.ring(world, t.center(), Color.WHITE, 150)
-	await wait(0.08)
-
-
-func _tara_attack(h: Battler, t: Battler) -> void:
-	await h.dash_to(t.global_position + Vector2(-165, 6), 0.32)
-	h.paper_flip("attack")
-	var ok := await ac.timing(t.center(), 0.75)
-	Sfx.play("sfx_paper", 2.0, 1.5)
-	_slash(t.center())
-	await _hit_enemy(t, _power(h) + (1 if ok else 0), ok, h)
-	if ok:
-		_nice(h)
-	await wait(0.35)
-	await h.paper_flip("idle")
+## Combo ke satu target: tiap tombol = satu pukulan/tendangan.
+## Kembalikan jumlah PERFECT.
+func _combo(h: Battler, t: Battler, n: int, mult: float, big_finish: bool) -> int:
+	var dest := t.global_position + Vector2(-170, 6)
+	await h.dash_to(dest, 0.28)
+	var keys := _rand_keys(n)
+	var perfects := 0
+	for i in n:
+		if not t.alive or t.hp <= 0:
+			break
+		var r := await qte.prompt(t.center() + Vector2(0, -150), keys[i], 0.62 if i == 0 else 0.5)
+		var kick := i % 2 == 1
+		h.set_pose("kick" if kick else "attack")
+		var tw := h.create_tween()
+		tw.tween_property(h, "global_position", dest + Vector2(36, -18 if kick else 0), 0.06)
+		tw.tween_property(h, "global_position", dest, 0.12)
+		if r == "miss":
+			Fx.pop_text(world, t.top() + Vector2(0, -20), "MISS", Color("ff6a6a"), 44, 0.4)
+			Sfx.play("sfx_miss", -4.0)
+			await wait(0.2)
+			break
+		var q := 1.3 if r == "perfect" else 1.0
+		if r == "perfect":
+			perfects += 1
+			Game.stats.perfect += 1
+			add_meter(7)
+		else:
+			add_meter(3)
+		var dmg := int(round(_power(h) * mult * q * randf_range(0.92, 1.08)))
+		var last := i == n - 1
+		_impact(t.center() + Vector2(-20, -10 if kick else -40), kick)
+		await _hit_enemy(t, dmg, r == "perfect" or (last and big_finish), "PERFECT" if r == "perfect" else "")
+	await wait(0.2)
+	h.set_pose("idle")
 	await h.go_home()
+	return perfects
 
 
-func _slash(p: Vector2) -> void:
+func _impact(p: Vector2, kick: bool) -> void:
+	Fx.ring(world, p, Color.WHITE, 110 if kick else 90, 0.22)
 	var l := Line2D.new()
-	l.points = PackedVector2Array([p + Vector2(-90, -80), p + Vector2(0, -10), p + Vector2(90, 70)])
-	l.width = 26
-	l.default_color = Color.WHITE
-	l.begin_cap_mode = Line2D.LINE_CAP_ROUND
-	l.end_cap_mode = Line2D.LINE_CAP_ROUND
+	var a := -0.6 if kick else 0.2
+	var dir := Vector2(cos(a), sin(a))
+	l.points = PackedVector2Array([p - dir * 80, p + dir * 80])
+	l.width = 22
+	l.default_color = Color(1, 0.95, 0.7)
 	var c := Curve.new()
 	c.add_point(Vector2(0, 0.1))
 	c.add_point(Vector2(0.5, 1))
@@ -546,132 +572,116 @@ func _slash(p: Vector2) -> void:
 	l.z_index = 55
 	world.add_child(l)
 	var tw := l.create_tween()
-	tw.tween_property(l, "modulate:a", 0.0, 0.25)
+	tw.tween_property(l, "modulate:a", 0.0, 0.2)
 	tw.tween_callback(l.queue_free)
+	Sfx.play("sfx_paper", -4.0, 1.6, 0.1)
 
 
-func _raka_attack(h: Battler, t: Battler) -> void:
-	await h.dash_to(t.global_position + Vector2(-200, 6), 0.3)
-	var land := Vector2(t.global_position.x, t.top().y + 24)
-	h.jump_to(land, 0.55, 200)
-	var ok := await ac.timing(land + Vector2(0, -20), 0.61)
-	await _hit_enemy(t, _power(h), false, h)
-	Sfx.play("sfx_land", -2.0, 1.3)
-	var hits := 1
-	while ok and t.hp > 0 and hits < 3:
-		hits += 1
-		_nice(h, "NICE!" if hits == 2 else "GREAT!")
-		h.jump_to(land, 0.5, 150)
-		var next_ok := false
-		if hits < 3:
-			next_ok = await ac.timing(land + Vector2(0, -20), 0.56)
-		else:
-			await wait(0.56)
-		await _hit_enemy(t, _power(h) if hits == 2 else 1, true, h)
-		ok = next_ok
-	await h.jump_to(h.home, 0.55, 170)
-	h.idle_anim = true
+func _hit_enemy(t: Battler, dmg: int, big: bool, tag := "") -> void:
+	dmg = maxi(1, dmg)
+	t.take_damage(dmg)
+	t.hurt(big)
+	Fx.damage_star(world, t.center() + Vector2(randf_range(20, 70), randf_range(-70, -20)), dmg)
+	Fx.burst(world, t.center(), "paper", 10 + mini(dmg, 20))
+	Sfx.play("sfx_hit_big" if big else "sfx_hit", 0.0, 1.0, 0.1)
+	shake(0.32 if big else 0.16)
+	if tag != "":
+		Fx.pop_text(world, t.top() + Vector2(0, -10), tag, Color("7dff8a"), 40, 0.35)
+	if big:
+		Engine.time_scale = 0.35
+		await get_tree().create_timer(0.05, true, false, true).timeout
+		Engine.time_scale = 1.0
+	await wait(0.05)
 
 
-# ---------------- jurus
+func _skill(h: Battler, sk: Dictionary, target: Variant) -> void:
+	match sk.id:
+		"tinju":
+			await Fx.cut_in(cutin_layer, h.tex_attack, "TINJU KOMUTER!", Game.ORANGE)
+			var p := await _combo(h, target, sk.keys, sk.power, true)
+			if p == sk.keys:
+				Fx.pop_text(world, Vector2(640, 260), "COMBO SEMPURNA!", Game.YELLOW, 70, 0.6)
+				add_ap(h.id, 1)
+		"sapuan":
+			await Fx.cut_in(cutin_layer, h.tex_attack, "SAPUAN KAKI!", Game.TEAL)
+			var p := await _combo(h, target, sk.keys, sk.power, true)
+			if p == sk.keys and target.alive:
+				target.set_meta("stun", true)
+				Fx.pop_text(world, target.top() + Vector2(0, -40), "PUSING!", Color("ffd23f"), 56)
+				Fx.burst(world, target.top(), "stars", 12, 0.5)
+		"putar", "badai":
+			var name := "TENDANGAN PUTAR!" if sk.id == "putar" else "BADAI DOKUMEN!"
+			await Fx.cut_in(cutin_layer, h.tex_attack, name, h.data.color)
+			await h.dash_to(Vector2(620, h.home.y), 0.3)
+			var keys := _rand_keys(sk.keys)
+			var total := 0.0
+			for i in sk.keys:
+				var r := await qte.prompt(Vector2(640, 300), keys[i], 0.55)
+				h.set_pose("kick" if i % 2 == 1 else "attack")
+				if r == "miss":
+					Fx.pop_text(world, Vector2(640, 380), "MISS", Color("ff6a6a"), 44, 0.4)
+					break
+				total += 1.3 if r == "perfect" else 1.0
+				if r == "perfect":
+					add_meter(5)
+				Fx.ring(world, h.center(), Color.WHITE, 200, 0.25)
+				Sfx.play("sfx_paper", 0.0, 1.2 + i * 0.1)
+			if total > 0:
+				Fx.speed_lines(world, Vector2(900, 480), 0.5)
+				for e in _alive(enemies):
+					var dmg := int(round(_power(h) * sk.power * total))
+					Fx.burst(world, e.center(), "paper" if sk.id == "badai" else "stars", 20)
+					await _hit_enemy(e, dmg, true)
+			h.set_pose("idle")
+			await h.go_home()
+		"semangat":
+			var t: Battler = target
+			h.set_pose("attack")
+			var bonus := 0
+			for k in _rand_keys(sk.keys):
+				var r := await qte.prompt(t.center() + Vector2(0, -150), k, 0.6)
+				if r != "miss":
+					bonus += 1
+			await _heal_unit(t, int(t.max_hp * (0.3 + 0.1 * bonus)))
+			h.set_pose("idle")
+		"teriak":
+			h.set_pose("attack")
+			atk_buff = 2
+			Sfx.play("sfx_buff")
+			shake(0.3)
+			Fx.pop_text(world, h.top() + Vector2(0, -40), "JAM PULANG!!", Game.ORANGE, 64)
+			for x in _alive(heroes):
+				Fx.ring(world, x.center(), Game.ORANGE, 170, 0.45)
+				x.flash(Game.ORANGE, 0.4, 0.5)
+			menu.say("ATK party +30% selama 2 giliran!")
+			await wait(1.0)
+			h.set_pose("idle")
 
-func _skill_badai(h: Battler) -> void:
-	await Fx.cut_in(cutin_layer, h.tex_attack, "BADAI KERTAS!", Game.TEAL)
-	await h.dash_to(Vector2(600, h.home.y), 0.3)
-	h.paper_flip("attack")
-	var swirl := Fx.burst(world, h.center(), "paper", 40, 0.5, false)
-	swirl.one_shot = false
-	swirl.explosiveness = 0.0
-	swirl.gravity = Vector2(0, -200)
-	var f := await ac.mash(Vector2(h.global_position.x, h.top().y - 70), 2.2)
-	swirl.emitting = false
-	get_tree().create_timer(1.5).timeout.connect(swirl.queue_free)
-	var dmg := 1 + int(round(f * 3.0))
-	if f >= 0.8:
-		_nice(h, "GREAT!" if f >= 0.95 else "NICE!")
-	Fx.speed_lines(world, h.center(), 0.6)
-	Sfx.play("sfx_paper", 4.0, 0.8)
+
+func _ultimate() -> void:
+	var r: Battler = heroes[0]
+	var t: Battler = heroes[1]
+	await Fx.cut_in(cutin_layer, r.tex_attack, "PAMUNGKAS:", Game.ORANGE)
+	await Fx.cut_in(cutin_layer, t.tex_attack, "SHIFT TERAKHIR!", Game.TEAL, true)
+	var total := 0.0
+	for i in 6:
+		var who: Battler = r if i % 2 == 0 else t
+		if not who.alive:
+			who = r if r.alive else t
+		var res := await qte.prompt(Vector2(640, 280), KEYS[randi() % KEYS.size()], 0.45)
+		if res == "miss":
+			break
+		total += 1.4 if res == "perfect" else 1.0
+		who.set_pose("kick" if i % 2 == 1 else "attack")
+		Fx.speed_lines(world, Vector2(900, 480), 0.2)
+		Sfx.play("sfx_hit", 0.0, 1.0 + i * 0.08)
+		shake(0.2)
+	Fx.burst(world, Vector2(900, 450), "confetti", 60, 1.4)
 	for e in _alive(enemies):
-		_paper_stream(h.center(), e.center())
-		await wait(0.18)
-		await _hit_enemy(e, dmg, f >= 0.8, h)
-	await wait(0.4)
-	await h.paper_flip("idle")
-	await h.go_home()
-
-
-func _paper_stream(from: Vector2, to: Vector2) -> void:
-	var p := Fx.burst(world, from, "paper", 26, 1.0)
-	var d := to - from
-	p.direction = d.normalized()
-	p.spread = 10
-	p.gravity = Vector2.ZERO
-	p.initial_velocity_min = 1200
-	p.initial_velocity_max = 1500
-	p.lifetime = d.length() / 1300.0
-	p.explosiveness = 0.6
-	p.damping_min = 0
-	p.damping_max = 0
-
-
-func _skill_semangat(h: Battler, t: Battler) -> void:
-	h.paper_flip("attack")
-	Fx.burst(world, h.center(), "stars", 10, 0.5)
-	var ok := await ac.timing(t.center(), 0.8)
-	await _heal_unit(t, 6 + (3 if ok else 0))
-	if ok:
-		_nice(h)
-	await wait(0.3)
-	await h.paper_flip("idle")
-
-
-func _skill_tusukan(h: Battler, t: Battler) -> void:
-	await Fx.cut_in(cutin_layer, h.tex_attack, "TUSUKAN PAYUNG!", Game.ORANGE)
-	await h.dash_to(t.global_position + Vector2(-280, 4), 0.3)
-	h.paper_flip("attack")
-	var q := await ac.hold(Vector2(h.global_position.x + 40, h.top().y - 60), 1.1)
-	h.flash(Color("ffb060"), 0.2)
-	Fx.speed_lines(world, t.center(), 0.45, Color(1, 0.85, 0.6, 0.9))
-	var tw := h.create_tween()
-	tw.tween_property(h, "global_position", t.global_position + Vector2(-110, 4), 0.09).set_trans(Tween.TRANS_EXPO)
-	await tw.finished
-	var dmg := 2 + int(round(q * 5.0))
-	if q >= 1.0:
-		_nice(h, "SEMPURNA!")
-	elif q <= 0.2:
-		Fx.pop_text(world, h.top() + Vector2(0, -40), "KELAMAAN!", Color("ff6a6a"), 50)
-	await _hit_enemy(t, dmg, q >= 1.0, h)
-	await wait(0.4)
-	await h.paper_flip("idle")
-	await h.go_home()
-
-
-func _skill_pelindung(h: Battler) -> void:
-	h.paper_flip("attack")
-	var ok := await ac.timing(h.center(), 0.8)
-	var turns := 2 if ok else 1
-	if ok:
-		_nice(h)
-	Sfx.play("sfx_guard")
-	Sfx.play("sfx_buff", -4.0)
-	for x in _alive(heroes):
-		x.guard_up = turns
-		x.refresh_status_icons()
-		Fx.ring(world, x.center(), Color("7dd8ff"), 170, 0.5)
-		x.flash(Color("7dd8ff"), 0.4, 0.6)
-	menu.say("Payung Pelindung! Damage -2 selama %d giliran." % turns)
-	await wait(0.9)
-	await h.paper_flip("idle")
-
-
-func _defend(h: Battler) -> void:
-	h.defending = true
-	Game.set_sp(Game.sp + 1)
-	Sfx.play("sfx_guard")
-	Fx.ring(world, h.center(), Color("7dd8ff"), 150, 0.4)
-	Fx.pop_text(world, h.top() + Vector2(0, -30), "JAGA!", Color("7dd8ff"), 50, 0.6)
-	h.refresh_status_icons()
-	await wait(0.8)
+		var dmg := int(round((_power(r) + _power(t)) * 0.9 * total))
+		await _hit_enemy(e, dmg, true, "PAMUNGKAS")
+	for x in heroes:
+		x.set_pose("idle")
 
 
 func _heal_unit(t: Battler, amt: int) -> void:
@@ -681,14 +691,12 @@ func _heal_unit(t: Battler, amt: int) -> void:
 	Fx.ring(world, t.center(), Color("8ff0a0"), 140)
 	t.flash(Color("c8ffc0"), 0.5, 0.6)
 	Sfx.play("sfx_heal")
-	if t.is_hero:
-		hud.mood(t.id, "happy")
 	hud.refresh()
 	await wait(0.5)
 
 
 func _use_item(h: Battler, id: String, target: Variant) -> void:
-	Game.bag[id] -= 1
+	Game.use_item(id)
 	var it: Dictionary = Game.ITEMS[id]
 	var icon := Sprite2D.new()
 	icon.texture = load(it.icon)
@@ -696,247 +704,181 @@ func _use_item(h: Battler, id: String, target: Variant) -> void:
 	icon.position = h.top() + Vector2(0, -50)
 	icon.z_index = 60
 	world.add_child(icon)
-	var sc := icon.scale
-	icon.scale = Vector2.ZERO
-	var tw := icon.create_tween()
-	tw.tween_property(icon, "scale", sc * 1.3, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(icon, "scale", sc, 0.1)
 	Sfx.play("sfx_star")
-	Fx.burst(world, icon.position, "stars", 8, 0.4)
 	menu.say("%s pakai %s!" % [h.display_name, it.name])
-	await wait(0.7)
+	await wait(0.6)
 	icon.queue_free()
-	match id:
-		"kopi":
-			await _heal_unit(target, 10)
-		"esteh":
-			Game.set_sp(Game.sp + 5)
-			Fx.pop_text(world, h.top() + Vector2(0, -30), "+5 SP", Color("ffa23a"), 56)
-			Fx.burst(world, h.center(), "heal", 16)
-			Sfx.play("sfx_heal")
-			await wait(0.6)
-		"nasgor":
-			for x in heroes:
-				await _heal_unit(x, 8)
-		"kartu":
-			await _train(h)
-	menu.close()
+	if it.has("dmg"):
+		await _train(int(it.dmg))
+		return
+	var t: Battler = target
+	if it.has("hp"):
+		await _heal_unit(t, int(it.hp))
+	if it.has("ap"):
+		add_ap(t.id, int(it.ap))
+		Fx.pop_text(world, t.top() + Vector2(0, -30), "+%d AP" % it.ap, Game.YELLOW, 50)
+		Sfx.play("sfx_heal")
+		await wait(0.5)
+	if it.get("cure", false):
+		t.atk_down = 0
+		t.refresh_status_icons()
+		await _heal_unit(t, 10)
 
 
-func _train(h: Battler) -> void:
+func _train(dmg: int) -> void:
 	menu.say("TAP! Kereta MRT lewat!")
 	Sfx.play("sfx_train", 2.0)
 	var tr := Fx.Train.new()
-	var x0 := -1250.0
-	var x1 := 1500.0
-	var dur := 1.3
-	tr.position = Vector2(x0, 694)
+	tr.position = Vector2(-1250, 694)
 	tr.z_index = 35
 	world.add_child(tr)
 	var tw := tr.create_tween()
-	tw.tween_property(tr, "position:x", x1, dur)
+	tw.tween_property(tr, "position:x", 1500.0, 1.3)
 	shake(0.4)
-	var speed := (x1 - x0) / dur
-	var nose := 3 * 360.0 + 54.0
-	var elapsed := 0.0
-	var list := _alive(enemies)
-	list.sort_custom(func(a, b): return a.global_position.x < b.global_position.x)
-	for e in list:
-		var at: float = (e.global_position.x - (x0 + nose)) / speed
-		if at > elapsed:
-			await wait(at - elapsed)
-			elapsed = at
-		Fx.speed_lines(world, e.center(), 0.25)
-		await _hit_enemy(e, 5, true, h)
-		elapsed += 0.08
+	await wait(0.75)
+	for e in _alive(enemies):
+		await _hit_enemy(e, dmg, true)
 	await tw.finished
 	tr.queue_free()
 
 
 # =====================================================================
-# GILIRAN MUSUH
+# GILIRAN MUSUH (parry / dodge / counter)
 # =====================================================================
 
-func _epower(e: Battler) -> int:
-	return e.atk + e.atk_up
-
-
-func _announce(e: Battler, text: String) -> void:
-	menu.say("%s: %s" % [e.display_name, text])
+func _enemy_turn(e: Battler) -> void:
+	if e.get_meta("stun", false):
+		e.set_meta("stun", false)
+		Fx.pop_text(world, e.top(), "pusing...", Color("ffd23f"), 40, 0.5)
+		await wait(0.7)
+		return
+	var moves: Array = e.data.moves
+	var mv: Dictionary = moves[randi() % moves.size()]
+	if e.boss and randf() < 0.4:
+		mv = moves[moves.size() - 1]
+	var fast: bool = e.get_meta("fast", false)
+	menu.say("%s: %s" % [e.display_name, mv.name])
 	e.flash(e.data.color, 0.45, 0.6)
 	Sfx.play("sfx_blip", -4.0, 0.7)
-	await wait(0.55)
-
-
-func _enemy_turn(e: Battler) -> void:
-	e.turn_count += 1
+	var all_targets: bool = mv.get("all", false)
 	var t := _rand_hero()
 	if t == null:
 		return
-	match e.id:
-		"deadline":
-			if e.turn_count % 3 == 0:
-				await _announce(e, "WAKTU HABIS! (serang 2x)")
-				Sfx.play("sfx_clock")
-				Fx.pop_text(world, e.top() + Vector2(0, 30), "TIK. TAK.", Color("f07a1f"), 54, 0.6)
-				await wait(0.5)
-				for i in 2:
-					var tt := _rand_hero()
-					if tt == null:
-						break
-					await _enemy_melee(e, tt, 2)
-			else:
-				await _announce(e, "Tusuk Jarum Jam")
-				await _enemy_melee(e, t, _epower(e))
-		"revisi":
-			var hurt_ally: Battler = null
-			for o in _alive(enemies):
-				if o != e and o.hp < o.max_hp * 0.6:
-					hurt_ally = o
-			var clean := _alive(heroes).filter(func(x): return x.atk_down == 0)
-			if hurt_ally != null and randf() < 0.6:
-				await _announce(e, "\"Revisi lagi :)\" (pulihkan teman)")
-				await e.windup(0.3)
-				await _heal_unit(hurt_ally, 4)
-			elif not clean.is_empty() and randf() < 0.45:
-				await _announce(e, "Coret Semangat (ATK turun)")
-				await _enemy_projectile(e, clean[randi() % clean.size()], 1, true)
-			else:
-				await _announce(e, "Coret Merah")
-				await _enemy_projectile(e, t, _epower(e))
-		"target":
-			if e.atk_up < 2 and (e.turn_count == 1 or randf() < 0.35):
-				await _announce(e, "ANGKA HARUS NAIK! (ATK naik)")
-				e.atk_up += 1
-				Sfx.play("sfx_buff")
-				e.flash(Color("9be02a"), 0.5, 0.6)
-				Fx.pop_text(world, e.top() + Vector2(0, 20), "LEBIH TINGGI!", Color("9be02a"), 52)
-				Fx.ring(world, e.center(), Color("9be02a"), 170, 0.45)
-				e.refresh_status_icons()
-				await wait(0.8)
-			else:
-				await _announce(e, "Gigit Kalkulator")
-				await _enemy_melee(e, t, _epower(e), "sfx_bite")
-		"lembur":
-			if e.charging:
-				e.charging = false
-				if _aura.has(e):
-					_aura[e].queue_free()
-					_aura.erase(e)
-				await _announce(e, "HARI INI. BESOK. SETIAP HARI.")
-				Fx.speed_lines(world, e.center(), 0.7, Color(1, 0.2, 0.5, 0.8))
-				await _enemy_melee(e, t, 7, "sfx_hit_big")
-			elif e.turn_count % 3 == 2:
-				e.charging = true
-				await _announce(e, "Shift Tambahan...")
-				Sfx.play("sfx_charge")
-				var aura := Fx.burst(world, e.center(), "glow", 24, 0.6, false)
-				aura.one_shot = false
-				aura.explosiveness = 0.0
-				_aura[e] = aura
-				shake(0.3)
-				menu.say("LEMBUR mengumpulkan tenaga! Giliran depan serangan BESAR. Siap-siap GUARD!")
-				await wait(1.4)
-			elif randf() < 0.55:
-				await _announce(e, "Struk Tanpa Akhir (serang semua)")
-				await _receipt_rain(e, 3)
-			else:
-				await _announce(e, "Tinju Lembur")
-				await _enemy_melee(e, t, _epower(e))
-
-
-func _enemy_melee(e: Battler, t: Battler, dmg: int, snd := "sfx_hit") -> void:
-	await e.dash_to(t.global_position + Vector2(190 if not e.boss else 230, -2), 0.35)
-	ac.guard_begin(t.top() + Vector2(0, -30))
-	await e.windup(0.32)
-	await e.lunge(t.global_position, 70, 0.1)
-	var g := ac.guard_result()
-	await _hit_hero(t, dmg, g, snd)
-	await wait(0.25)
-	await e.jump_to(e.home, 0.4, 90, false)
+	var hits: Array = mv.hits
+	var heavy: Array = mv.get("heavy", [])
+	await wait(0.35)
+	if not all_targets:
+		await e.dash_to(t.global_position + Vector2(210 if not e.boss else 250, -2), 0.3)
+	var parried := 0
+	var landed := 0
+	for i in hits.size():
+		var tgt: Battler = t
+		if all_targets:
+			var al := _alive(heroes)
+			if al.is_empty():
+				break
+			tgt = al[i % al.size()]
+		if not tgt.alive:
+			var al2 := _alive(heroes)
+			if al2.is_empty():
+				break
+			tgt = al2[0]
+		var hv: bool = heavy[i] if i < heavy.size() else false
+		qte.defend_begin(tgt.top() + Vector2(0, -40), hv)
+		var delay: float = hits[i] * (0.8 if fast else 1.0)
+		# antisipasi: musuh menarik ancang-ancang selama delay
+		var s := Vector2.ONE * e.base_scale
+		e.idle_anim = false
+		var tw := e.create_tween()
+		tw.tween_property(e.sprite, "scale", Vector2(s.x * 1.08, s.y * 0.9), delay * 0.85)
+		tw.tween_property(e.sprite, "scale", Vector2(s.x * 0.92, s.y * 1.1), delay * 0.15)
+		if hv:
+			e.flash(Color(1, 0.2, 0.2), delay, 0.5)
+		if all_targets:
+			var p := Fx.burst(world, tgt.top() + Vector2(0, -240), "receipts", 6, 0.2)
+			p.gravity = Vector2(0, 1600)
+			p.direction = Vector2(0, 1)
+		await wait(delay)
+		var res := qte.defend_result(hv)
+		e.sprite.scale = s
+		var dmg := int(round(float(e.atk) * float(mv.power) * randf_range(0.9, 1.1)))
+		await _resolve_hit(e, tgt, dmg, res)
+		if res == "parry":
+			parried += 1
+		landed += 1
+	qte.defend_end()
 	e.idle_anim = true
+	if parried > 0 and parried == landed and not all_targets and t.alive and e.alive:
+		await _counter(t, e)
+	await wait(0.2)
+	if not all_targets and e.alive:
+		await e.jump_to(e.home, 0.35, 70, false)
+	e.idle_anim = e.alive
 
 
-func _enemy_projectile(e: Battler, t: Battler, dmg: int, debuff := false) -> void:
-	await e.windup(0.28)
-	Sfx.play("sfx_paper", 0.0, 1.8)
-	ac.guard_begin(t.top() + Vector2(0, -30))
-	var pen := Node2D.new()
-	var body := Polygon2D.new()
-	body.polygon = PackedVector2Array([Vector2(-34, -6), Vector2(22, -6), Vector2(36, 0), Vector2(22, 6), Vector2(-34, 6)])
-	body.color = Color("d8243a")
-	pen.add_child(body)
-	var outline := Line2D.new()
-	outline.points = body.polygon + PackedVector2Array([body.polygon[0]])
-	outline.width = 3
-	outline.default_color = Game.INK
-	pen.add_child(outline)
-	pen.position = e.center()
-	pen.z_index = 50
-	world.add_child(pen)
-	var tw := pen.create_tween()
-	tw.tween_property(pen, "position", t.center(), 0.5).set_trans(Tween.TRANS_SINE)
-	tw.parallel().tween_property(pen, "rotation", -TAU * 2, 0.5)
-	await tw.finished
-	pen.queue_free()
-	var g := ac.guard_result()
-	await _hit_hero(t, dmg, g)
-	if debuff:
-		if not g:
-			t.atk_down = 2
-			t.refresh_status_icons()
-			Sfx.play("sfx_debuff")
-			Fx.pop_text(world, t.top() + Vector2(0, -70), "ATK -1", Color("b27ae8"), 48)
-		else:
-			Fx.pop_text(world, t.top() + Vector2(0, -70), "DITANGKIS!", Color("7dd8ff"), 44)
-	await wait(0.3)
-
-
-func _receipt_rain(e: Battler, dmg: int) -> void:
-	await e.windup(0.4)
-	Sfx.play("sfx_paper", 3.0, 0.7)
-	shake(0.25)
-	for t in _alive(heroes):
-		ac.guard_begin(t.top() + Vector2(0, -30))
-		var p := Fx.burst(world, t.top() + Vector2(0, -260), "receipts", 16, 0.25)
-		p.gravity = Vector2(0, 1400)
-		p.direction = Vector2(0, 1)
-		p.spread = 20
-		await wait(0.5)
-		var g := ac.guard_result()
-		await _hit_hero(t, dmg, g)
-		await wait(0.15)
-
-
-func _hit_hero(t: Battler, dmg: int, guarded: bool, snd := "sfx_hit") -> void:
-	var d := dmg
-	if guarded:
-		d -= 1
-	if t.defending:
-		d -= 1
-	if t.guard_up > 0:
-		d -= 2
-	d = maxi(0, d)
-	if guarded:
-		Game.stats.guard += 1
-		Fx.pop_text(world, t.top() + Vector2(0, -60), "GUARD!", Color("7dd8ff"), 58, 0.6)
-		Fx.ring(world, t.center(), Color("7dd8ff"), 150)
-		Sfx.play("sfx_guard")
-	Fx.damage_star(world, t.center() + Vector2(-50, -40), d)
-	if d > 0:
-		t.take_damage(d)
-		t.hurt(d >= 4)
-		Sfx.play(snd, 0.0, 1.0, 0.08)
-		Fx.burst(world, t.center(), "ink", 10 + d * 2)
-		shake(0.22 + d * 0.04)
-		hud.shake_card(t.id)
-		hud.mood(t.id, "hurt")
+func _resolve_hit(e: Battler, t: Battler, dmg: int, res: String) -> void:
+	match res:
+		"parry":
+			Game.stats.parry += 1
+			Fx.pop_text(world, t.top() + Vector2(0, -70), "PARRY!", Game.YELLOW, 56, 0.35)
+			Fx.ring(world, t.center() + Vector2(40, -30), Game.YELLOW, 130, 0.25)
+			Fx.burst(world, t.center() + Vector2(40, -30), "stars", 8, 0.6)
+			Sfx.play("sfx_guard", 2.0, 1.2)
+			Sfx.play("sfx_tick", 0.0, 1.8)
+			e.hurt(false)
+			t.set_pose("attack")
+			get_tree().create_timer(0.25).timeout.connect(t.set_pose.bind("idle"))
+			add_ap(t.id, 1)
+			add_meter(10)
+			shake(0.15)
+		"dodge":
+			Fx.pop_text(world, t.top() + Vector2(0, -70), "DODGE", Color("7dd8ff"), 46, 0.3)
+			Sfx.play("sfx_jump", -4.0, 1.4)
+			var tw := t.create_tween()
+			tw.tween_property(t, "position:x", t.home.x - 70, 0.08)
+			tw.tween_property(t, "position:x", t.home.x, 0.2)
+			add_meter(3)
+		_:
+			var d := dmg
+			if t.defending:
+				d = int(d * 0.7)
+			t.take_damage(d)
+			t.hurt(d >= 12)
+			Fx.damage_star(world, t.center() + Vector2(-50, -40), d)
+			Fx.burst(world, t.center(), "ink", 10)
+			Sfx.play("sfx_hit", 0.0, 0.9, 0.1)
+			shake(0.2 + d * 0.01)
+			hud.mood(t.id, "hurt")
+			if e.id == "revisi" and randf() < 0.35 and t.atk_down == 0:
+				t.atk_down = 2
+				t.refresh_status_icons()
+				Fx.pop_text(world, t.top() + Vector2(0, -100), "PANIK! ATK turun", Color("b27ae8"), 40)
+				Sfx.play("sfx_debuff")
+			if t.hp <= 0 and t.alive:
+				t.knock_out()
+				Fx.pop_text(world, t.top() + Vector2(0, 40), "TUMBANG!", Color("ff6a6a"), 50)
 	hud.refresh()
-	if t.hp <= 0 and t.alive:
-		t.knock_out()
-		Fx.pop_text(world, t.top() + Vector2(0, 40), "TUMBANG!", Color("ff6a6a"), 50)
-		hud.refresh()
-	await wait(0.1)
+	await wait(0.08)
+
+
+func _counter(h: Battler, e: Battler) -> void:
+	Fx.pop_text(world, Vector2(640, 250), "COUNTER!", Game.YELLOW, 90, 0.5)
+	Sfx.play("sfx_nice")
+	Engine.time_scale = 0.4
+	await get_tree().create_timer(0.25, true, false, true).timeout
+	Engine.time_scale = 1.0
+	h.set_pose("kick")
+	var from := h.global_position
+	var tw := h.create_tween()
+	tw.tween_property(h, "global_position", e.global_position + Vector2(-150, 0), 0.1)
+	await tw.finished
+	_impact(e.center(), true)
+	await _hit_enemy(e, int(_power(h) * 2.0), true, "COUNTER")
+	var tw2 := h.create_tween()
+	tw2.tween_property(h, "global_position", from, 0.2)
+	await tw2.finished
+	h.set_pose("idle")
+	add_meter(10)
 
 
 # =====================================================================
@@ -945,30 +887,47 @@ func _hit_hero(t: Battler, dmg: int, guarded: bool, snd := "sfx_hit") -> void:
 
 func _victory() -> String:
 	menu.close()
-	hud.set_active("")
 	Sfx.stop_music(0.2)
 	Sfx.play("jingle_victory", 2.0)
-	var l := Fx.label("MENANG!", 130, Game.YELLOW, 22)
-	l.size = Vector2(1280, 200)
-	l.position = Vector2(0, 170)
-	l.pivot_offset = Vector2(640, 100)
-	l.rotation = deg_to_rad(-5)
-	l.scale = Vector2.ZERO
-	ui.add_child(l)
-	var tw := l.create_tween()
-	tw.tween_property(l, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var exp := 0
+	var cash := 0
+	for g in group:
+		var d := Game.enemy_data(g)
+		exp += int(d.exp)
+		cash += int(d.money)
+	Game.money += cash
+	Game.stats.battles += 1
+	var ups := Game.gain_exp(exp)
+	for h in heroes:
+		if h.alive:
+			Game.party[h.id].hp = maxi(Game.party[h.id].hp, h.hp)
+		else:
+			Game.party[h.id].hp = 1
 	for i in 3:
 		Fx.burst(world, Vector2(320 + i * 320, 140), "confetti", 40, 1.0)
 	for h in _alive(heroes):
-		hud.mood(h.id, "happy", 3.0)
-		h.jump_to(h.home, 0.4, 90)
-	await wait(0.5)
-	for h in _alive(heroes):
-		h.jump_to(h.home, 0.4, 120)
+		h.jump_to(h.home, 0.4, 100)
+	var panel := PanelContainer.new()
+	panel.theme = Game.ui_theme
+	panel.position = Vector2(390, 200)
+	panel.custom_minimum_size = Vector2(500, 0)
+	var v := VBoxContainer.new()
+	panel.add_child(v)
+	var t := Fx.label("MENANG!", 72, Game.YELLOW, 16)
+	v.add_child(t)
+	for line in ["+%d EXP" % exp, "+%s" % Game.rp(cash)] + ups:
+		var l := Label.new()
+		l.text = line
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.add_theme_font_size_override("font_size", 28 if line.begins_with("+") else 24)
+		v.add_child(l)
+	ui.add_child(panel)
+	panel.scale = Vector2(1, 0)
+	panel.create_tween().tween_property(panel, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK)
+	if not ups.is_empty():
+		Sfx.play("sfx_buff")
 	Game.shot("menang")
-	await wait(2.2)
-	stage.caption = ""
-	await stage.close_curtain()
+	await wait(2.6 if ups.is_empty() else 3.4)
 	return "win"
 
 
@@ -981,10 +940,47 @@ func _defeat() -> String:
 	l.position = Vector2(0, 220)
 	ui.add_child(l)
 	Game.shot("kalah")
-	await wait(2.4)
-	stage.caption = "DIRASUKI LEMBUR..."
-	stage.sub_caption = ""
-	l.queue_free()
-	await stage.close_curtain()
-	await wait(1.0)
+	await wait(2.6)
 	return "lose"
+
+
+# =====================================================================
+# HUD & TOMBOL LAYAR
+# =====================================================================
+
+## Tombol layar untuk QTE (mouse / sentuh).
+class TouchPad extends Control:
+	var qte: Qte
+	func _input(e: InputEvent) -> void:
+		if e is InputEventScreenTouch or (e is InputEventMouseButton and e.pressed):
+			visible = true
+		elif e is InputEventKey and e.pressed:
+			visible = false
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		visible = false
+		position = Vector2(1100, 420)
+		var layout := {"U": Vector2(56, 0), "L": Vector2(0, 50), "R": Vector2(112, 50), "D": Vector2(56, 100), "Z": Vector2(-120, 60), "X": Vector2(-66, 100)}
+		for k in layout:
+			var b := Button.new()
+			b.focus_mode = Control.FOCUS_NONE
+			b.text = {"U": "↑", "D": "↓", "L": "←", "R": "→", "Z": "Z", "X": "X"}[k]
+			if k in ["U", "D", "L", "R"]:
+				b.text = ""
+				b.icon = _arrow_icon(k)
+			b.position = layout[k]
+			b.custom_minimum_size = Vector2(50, 46)
+			b.modulate.a = 0.75
+			b.button_down.connect(func(): qte.virtual_press(k))
+			add_child(b)
+	func _arrow_icon(k: String) -> Texture2D:
+		var img := Image.create(24, 24, false, Image.FORMAT_RGBA8)
+		var ang := {"R": 0.0, "D": PI / 2, "L": PI, "U": -PI / 2}[k] as float
+		for y in 24:
+			for x in 24:
+				var p := Vector2(x - 12, y - 12).rotated(-ang)
+				if p.x < 9 and p.x > -2 and absf(p.y) < (9 - p.x) * 0.9:
+					img.set_pixel(x, y, Game.INK)
+				elif p.x <= -2 and p.x > -10 and absf(p.y) < 3:
+					img.set_pixel(x, y, Game.INK)
+		return ImageTexture.create_from_image(img)

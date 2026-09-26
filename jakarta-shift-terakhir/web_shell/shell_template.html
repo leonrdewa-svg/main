@@ -1,0 +1,277 @@
+<title>Shift Terakhir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Archivo+Narrow:wght@500;700&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #17151b;
+    --night: #1d1822;
+    --curtain: #a3122b;
+    --curtain-deep: #6e0a1c;
+    --gold: #e8b43a;
+    --paper: #f6efe1;
+    --orange: #e8692c;
+    --teal: #1f8a8a;
+    --yellow: #ffd23f;
+    --muted: #cbbfae;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--night);
+    color: var(--paper);
+    font-family: "Archivo Narrow", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+    overflow: hidden;
+  }
+  html, body { overscroll-behavior: none; }
+  #game { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; background: var(--night); }
+  :fullscreen #game, #game:fullscreen { width: 100%; height: 100%; }
+  #fsprompt {
+    position: absolute; inset: 0; z-index: 9; display: grid; place-items: center;
+    background: rgba(20, 10, 22, .55); cursor: pointer; touch-action: none;
+  }
+  #fsprompt[hidden] { display: none !important; }
+  #fsprompt span {
+    font-family: "Bangers", Impact, "Arial Black", sans-serif; font-size: 34px; letter-spacing: .05em;
+    color: var(--ink); background: var(--yellow); border: 3px solid var(--ink); border-radius: 12px;
+    padding: 10px 26px 6px; box-shadow: 6px 6px 0 var(--ink); text-align: center;
+  }
+  #fsprompt small { display: block; font-size: 17px; letter-spacing: .02em; }
+  #canvas { display: block; width: 100%; height: 100%; outline: none; background: var(--night); touch-action: none; }
+  #boot {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    padding-inline: 16px;
+    background:
+      linear-gradient(90deg, var(--curtain-deep) 0 14px, var(--curtain) 14px 30px, transparent 30px calc(100% - 30px), var(--curtain) calc(100% - 30px) calc(100% - 14px), var(--curtain-deep) calc(100% - 14px)),
+      linear-gradient(rgba(20, 10, 22, .55), rgba(20, 10, 22, .78)),
+      url("bg.jpg") center / cover no-repeat, var(--night);
+  }
+  #boot[hidden] { display: none !important; }
+  .valance {
+    position: absolute; left: 0; right: 0; top: 0; height: 34px;
+    background:
+      radial-gradient(circle at 50% 0, var(--curtain) 0 24px, transparent 25px) 0 10px / 56px 34px repeat-x,
+      linear-gradient(var(--curtain) 0 12px, transparent 12px);
+    border-bottom: 3px solid transparent;
+  }
+  .card {
+    position: relative;
+    width: min(620px, 100%);
+    display: grid; gap: 14px; justify-items: center; text-align: center;
+    padding-block: 26px 22px;
+  }
+  .logo { display: grid; justify-items: center; line-height: .9; transform: rotate(-3deg); }
+  .logo small {
+    font-family: "Bangers", Impact, "Arial Black", sans-serif; font-size: clamp(22px, 4vw, 32px); letter-spacing: .06em;
+    color: var(--paper); text-shadow: 3px 3px 0 var(--ink);
+  }
+  .logo strong {
+    font-family: "Bangers", Impact, "Arial Black", sans-serif; font-weight: 400;
+    font-size: clamp(46px, 11vw, 92px); letter-spacing: .02em; color: #fff;
+    background: var(--orange); padding: 2px 22px 0;
+    box-shadow: 8px 8px 0 var(--ink);
+    -webkit-text-stroke: 2px var(--ink); text-shadow: 4px 4px 0 var(--ink);
+  }
+  .tag { font-family: "Bangers", Impact, "Arial Black", sans-serif; color: var(--yellow); font-size: 20px; letter-spacing: .08em; text-shadow: 2px 2px 0 var(--ink); }
+  .cast { display: flex; gap: 8px; justify-content: center; align-items: end; height: clamp(120px, 26vh, 210px); }
+  .cast img { height: 100%; width: auto; max-width: 48%; object-fit: contain; filter: drop-shadow(6px 6px 0 rgba(0,0,0,.5)); }
+  .cast img:last-child { transform: scaleX(-1); }
+  #play {
+    font-family: "Bangers", Impact, "Arial Black", sans-serif; font-size: 34px; letter-spacing: .06em;
+    color: var(--ink); background: var(--yellow);
+    border: 3px solid var(--ink); border-radius: 10px; padding: 6px 34px 2px;
+    box-shadow: 6px 6px 0 var(--ink); cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  #play:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--ink); }
+  #play:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0 var(--ink); }
+  #play:focus-visible { outline: 3px solid var(--paper); outline-offset: 4px; }
+  #play:disabled { cursor: progress; background: var(--paper); }
+  .bar { width: min(360px, 100%); height: 16px; border: 3px solid var(--ink); background: #3a3440; border-radius: 4px; box-shadow: 4px 4px 0 var(--ink); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0%; background: var(--yellow); transition: width .2s linear; }
+  #status { font-size: 17px; color: var(--muted); min-height: 1.3em; font-variant-numeric: tabular-nums; }
+  #status.err { color: #ff8a8a; }
+  .keys { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; font-size: 16px; color: var(--paper); }
+  kbd {
+    font-family: inherit; font-weight: 700; font-size: 14px; color: var(--ink);
+    background: var(--paper); border: 2px solid var(--ink); border-radius: 4px; padding: 0 6px; box-shadow: 2px 2px 0 var(--ink);
+  }
+  #rotate {
+    position: absolute; inset: 0; z-index: 10; display: none;
+    place-items: center; text-align: center; padding-inline: 16px;
+    background: var(--night); color: var(--paper);
+    font-family: "Bangers", Impact, "Arial Black", sans-serif; font-size: 34px; letter-spacing: .04em;
+  }
+  #rotate .phone { width: 64px; height: 110px; border: 5px solid var(--yellow); border-radius: 12px; margin: 0 auto 18px; animation: turn 1.6s ease-in-out infinite; }
+  @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+  @media (orientation: portrait) and (pointer: coarse) { body.started #rotate { display: grid; } }
+  @media (prefers-reduced-motion: reduce) { #play, .bar i { transition: none; } }
+</style>
+
+<div id="game">
+  <div id="fsprompt" hidden><span>KETUK UNTUK LAYAR PENUH<small>Tap for fullscreen</small></span></div>
+  <div id="rotate"><div><div class="phone"></div>Putar HP ke mode LANDSCAPE<br><small style="font-size:20px">Rotate your phone to landscape · ketuk untuk layar penuh</small></div></div>
+  <canvas id="canvas" tabindex="0">Browser kamu tidak mendukung canvas.</canvas>
+  <div id="boot">
+    <div class="valance" aria-hidden="true"></div>
+    <div class="card">
+      <div class="logo"><small>JAKARTA:</small><strong>SHIFT TERAKHIR</strong></div>
+      <div class="tag">DEMO RPG KERTAS · TURN-BASED</div>
+      <div class="cast" aria-hidden="true"><img src="raka.png" alt=""><img src="tara.png" alt=""></div>
+      <button id="play" type="button">MAIN!</button>
+      <div class="bar" aria-hidden="true"><i id="fill"></i></div>
+      <div id="status" role="status">Unduhan sekitar 18 MB. Suara aktif setelah tombol ditekan.</div>
+      <div class="keys">
+        <span><kbd>Z</kbd> <kbd>Spasi</kbd> / klik: pilih &amp; aksi</span>
+        <span><kbd>X</kbd> <kbd>Esc</kbd> / klik kanan: batal</span>
+        <span><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> navigasi</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* File besar disajikan dalam gzip; buka ulang di browser sebelum diberikan ke Godot. */
+(function () {
+  const PACKED = {
+    "index.wasm": ["engine.gz.wasm", "application/wasm", __WASM_SIZE__],
+    "index.pck": ["gamedata.gz.wasm", "application/octet-stream", __PCK_SIZE__],
+  };
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async function (input, init) {
+    const url = typeof input === "string" ? input : (input && input.url) || String(input);
+    const name = url.split("?")[0].split("#")[0].split("/").pop();
+    const packed = PACKED[name];
+    if (!packed) return nativeFetch(input, init);
+    const res = await nativeFetch(packed[0]);
+    if (!res.ok) throw new Error("Gagal memuat " + packed[0] + " (" + res.status + ")");
+    const reader = res.body.getReader();
+    const first = await reader.read();
+    const head = first.value || new Uint8Array(0);
+    const gz = head.length > 1 && head[0] === 0x1f && head[1] === 0x8b;
+    const stream = new ReadableStream({
+      start(c) { if (head.length) c.enqueue(head); if (first.done) c.close(); },
+      async pull(c) { const r = await reader.read(); if (r.done) c.close(); else c.enqueue(r.value); },
+    });
+    const body = gz ? stream.pipeThrough(new DecompressionStream("gzip")) : stream;
+    return new Response(body, { status: 200, headers: { "Content-Type": packed[1], "Content-Length": String(packed[2]) } });
+  };
+
+  const WORKLETS = __WORKLETS__;
+  if (window.AudioWorklet && AudioWorklet.prototype.addModule) {
+    const nativeAdd = AudioWorklet.prototype.addModule;
+    AudioWorklet.prototype.addModule = function (url, opts) {
+      const name = String(url).split("?")[0].split("/").pop().replace(/^godot\./, "index.");
+      const src = WORKLETS[name];
+      if (!src) return nativeAdd.call(this, url, opts);
+      const blobUrl = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
+      return nativeAdd.call(this, blobUrl, opts).catch(() => nativeAdd.call(this, name, opts));
+    };
+  }
+})();
+</script>
+<script>
+__ENGINE_JS__
+</script>
+<script>
+(function () {
+  const CONFIG = __CONFIG__;
+  const boot = document.getElementById("boot");
+  const play = document.getElementById("play");
+  const fill = document.getElementById("fill");
+  const status = document.getElementById("status");
+  const canvas = document.getElementById("canvas");
+
+  function fail(msg) {
+    status.textContent = msg;
+    status.classList.add("err");
+    play.disabled = false;
+    play.textContent = "COBA LAGI";
+  }
+
+  const missing = Engine.getMissingFeatures({ threads: false });
+  if (missing.length) {
+    fail("Browser ini belum mendukung: " + missing.join(", ") + ". Coba Chrome, Edge, atau Firefox terbaru.");
+    play.disabled = true;
+    return;
+  }
+  if (typeof DecompressionStream === "undefined") {
+    fail("Browser ini terlalu lama (tidak ada DecompressionStream). Coba Chrome, Edge, Firefox, atau Safari terbaru.");
+    play.disabled = true;
+    return;
+  }
+
+  let started = false;
+  // ---- layar penuh di HP: butuh sentuhan pengguna (aturan browser) ----
+  const coarse = matchMedia("(pointer: coarse)").matches;
+  const root = document.documentElement;
+  const canFs = !!(root.requestFullscreen || root.webkitRequestFullscreen);
+  const fsPrompt = document.getElementById("fsprompt");
+  let fsDenied = false;
+  let fsBusy = false;
+  function isFs() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+  function isLandscape() { return window.innerWidth > window.innerHeight; }
+  function lockLandscape() {
+    try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(function () {}); } catch (e) {}
+  }
+  function enterFs() {
+    if (!canFs || isFs() || fsBusy) { lockLandscape(); return; }
+    fsBusy = true;
+    let r;
+    try {
+      r = root.requestFullscreen ? root.requestFullscreen({ navigationUI: "hide" }) : root.webkitRequestFullscreen();
+    } catch (e) { fsDenied = true; fsBusy = false; updateFsPrompt(); return; }
+    Promise.resolve(r).then(function () { lockLandscape(); })
+      .catch(function () { fsDenied = true; })
+      .then(function () { fsBusy = false; setTimeout(updateFsPrompt, 150); });
+  }
+  function updateFsPrompt() {
+    fsPrompt.hidden = !(coarse && canFs && !fsDenied && started && boot.hidden && isLandscape() && !isFs());
+  }
+  function goLandscape() { enterFs(); }
+  // Sentuhan pertama setelah HP diputar ke landscape langsung masuk layar penuh.
+  function onGesture() {
+    if (coarse && started && !isFs() && !fsDenied) enterFs();
+  }
+  window.addEventListener("pointerup", onGesture, true);
+  window.addEventListener("touchend", onGesture, true);
+  fsPrompt.addEventListener("click", function (e) { e.preventDefault(); enterFs(); });
+  document.getElementById("rotate").addEventListener("click", function () { enterFs(); });
+  window.addEventListener("resize", updateFsPrompt);
+  window.addEventListener("orientationchange", function () { setTimeout(updateFsPrompt, 200); });
+  if (screen.orientation) screen.orientation.addEventListener("change", function () { setTimeout(updateFsPrompt, 200); });
+  document.addEventListener("fullscreenchange", updateFsPrompt);
+  document.addEventListener("webkitfullscreenchange", updateFsPrompt);
+  function start() {
+    if (coarse) goLandscape();
+    if (started) return;
+    started = true;
+    document.body.classList.add("started");
+    play.disabled = true;
+    play.textContent = "MEMUAT…";
+    status.classList.remove("err");
+    status.textContent = "Mengunduh game…";
+    const engine = new Engine(CONFIG);
+    engine.startGame({
+      onProgress: function (cur, total) {
+        if (total > 0) {
+          const pct = Math.min(100, Math.round((cur / total) * 100));
+          fill.style.width = pct + "%";
+          status.textContent = "Mengunduh game… " + pct + "% (" + (cur / 1048576).toFixed(1) + " / " + (total / 1048576).toFixed(1) + " MB)";
+        }
+      },
+    }).then(function () {
+      boot.hidden = true;
+      canvas.focus();
+      updateFsPrompt();
+    }).catch(function (e) {
+      started = false;
+      document.body.classList.remove("started");
+      fail("Game gagal dimuat: " + (e && e.message ? e.message : e));
+    });
+  }
+  play.addEventListener("click", start);
+  canvas.addEventListener("pointerdown", function () { canvas.focus(); });
+})();
+</script>

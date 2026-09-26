@@ -83,6 +83,10 @@ func _ready() -> void:
 		trail.append(tara.position)
 
 	_build_ui()
+	if Game.touch_mode:
+		var tc := TouchControls.new()
+		tc.mode = "world"
+		add_child(tc)
 	Sfx.music(A.music)
 
 
@@ -158,7 +162,7 @@ func _build_ui() -> void:
 	money_l.size = Vector2(240, 62)
 	money_l.add_theme_font_size_override("font_size", 22)
 	mp.add_child(money_l)
-	var hint := Fx.label(Game.L("Panah/WASD: jalan   Z: bicara/serang duluan   C: menu   (klik = jalan ke sana)", "Arrows/WASD: walk   Z: talk/strike first   C: menu   (click = walk there)"), 18, Game.CREAM, 6, Game.FONT_UI)
+	var hint := Fx.label(Game.L("Joystick: jalan   AKSI: bicara/serang duluan   MENU: menu", "Joystick: walk   ACT: talk/strike first   MENU: menu") if Game.touch_mode else Game.L("Panah/WASD: jalan   Z: bicara/serang duluan   C: menu   (klik = jalan ke sana)", "Arrows/WASD: walk   Z: talk/strike first   C: menu   (click = walk there)"), 18, Game.CREAM, 6, Game.FONT_UI)
 	hint.position = Vector2(0, 692)
 	hint.size = Vector2(1280, 26)
 	ui.add_child(hint)
@@ -369,6 +373,7 @@ func _pause_menu() -> void:
 			{"id": "bag", "label": Game.L("Tas", "Bag"), "icon": "res://assets/sprites/item_tas.png", "desc": Game.L("Pakai makanan & minuman.", "Use food & drinks."), "enabled": Game.bag_total() > 0},
 			{"id": "status", "label": "Status", "icon": "res://assets/ui/icon_star.png", "desc": Game.L("Level, HP, dan ATK party.", "Party level, HP and ATK.")},
 			{"id": "lang", "label": Game.L("Bahasa: Indonesia", "Language: English"), "icon": "res://assets/ui/icon_sp.png", "desc": Game.L("Ganti bahasa teks (suara tetap Jepang).", "Switch text language (voices stay Japanese).")},
+			{"id": "touch", "label": Game.L("Kontrol: Sentuh (HP)", "Controls: Touch (phone)") if Game.touch_mode else Game.L("Kontrol: PC (keyboard)", "Controls: PC (keyboard)"), "icon": "res://assets/ui/icon_heart.png", "desc": Game.L("Ganti mode kontrol. Sentuh = joystick & tombol di layar untuk HP.", "Switch controls. Touch = on-screen joystick & buttons for phones.")},
 			{"id": "save", "label": Game.L("Simpan", "Save"), "icon": "res://assets/ui/icon_shield.png", "desc": Game.L("Simpan progres di browser/PC ini.", "Save your progress on this browser/PC.")},
 			{"id": "title", "label": Game.L("Ke Judul", "Title Screen"), "icon": "res://assets/ui/icon_sp.png", "desc": Game.L("Kembali ke layar judul (progres terakhir yang disimpan tetap ada).", "Return to the title screen (your last save is kept).")},
 		], "MENU", Vector2(80, 180))
@@ -377,6 +382,12 @@ func _pause_menu() -> void:
 		match c:
 			"bag":
 				await _bag_menu()
+			"touch":
+				Game.set_touch(not Game.touch_mode)
+				menu.close()
+				Game.pos = player.position
+				event.emit("reload", {})
+				return
 			"lang":
 				Game.set_lang("en" if Game.lang == "id" else "id")
 				Sfx.play("sfx_confirm")

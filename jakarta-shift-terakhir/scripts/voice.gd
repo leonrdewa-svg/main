@@ -14,8 +14,8 @@ func _ready() -> void:
 	_bark = AudioStreamPlayer.new()
 	add_child(_line)
 	add_child(_bark)
-	_line.volume_db = 2.0
-	_bark.volume_db = 0.0
+	_line.volume_db = 6.0
+	_bark.volume_db = 5.0
 
 
 func _get_stream(path: String) -> AudioStream:
@@ -50,3 +50,9 @@ func bark(who: String, kind: String) -> void:
 		return
 	_bark.stream = opts[randi() % opts.size()]
 	_bark.play()
+
+
+## Musik mengecil otomatis saat ada suara bicara (ducking).
+func _process(delta: float) -> void:
+	var talking := _line.playing or _bark.playing
+	Sfx.duck = move_toward(Sfx.duck, 1.0 if talking else 0.0, delta * (6.0 if talking else 1.5))

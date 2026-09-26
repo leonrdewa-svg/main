@@ -104,9 +104,14 @@ func _ready() -> void:
 	menu.desc_panel.position = Vector2(232, 650)
 	menu.desc_panel.custom_minimum_size = Vector2(620, 56)
 	menu.desc_panel.size = Vector2(620, 56)
-	var pad := TouchPad.new()
-	pad.qte = qte
-	ui.add_child(pad)
+	if Game.touch_mode:
+		var tc := TouchControls.new()
+		tc.mode = "battle"
+		add_child(tc)
+	else:
+		var pad := TouchPad.new()
+		pad.qte = qte
+		ui.add_child(pad)
 	cutin_layer = CanvasLayer.new()
 	cutin_layer.layer = 20
 	add_child(cutin_layer)

@@ -66,10 +66,16 @@ func _title() -> void:
 		if Game.has_save():
 			opts.append({"id": "load", "label": Game.L("Lanjutkan", "Continue"), "icon": "res://assets/ui/icon_star.png", "desc": Game.L("Lanjut dari simpanan terakhir.", "Continue from your last save.")})
 		opts.append({"id": "new", "label": Game.L("Main Baru", "New Game"), "icon": "res://assets/ui/icon_sp.png", "desc": Game.L("Mulai cerita dari awal (sekitar 1 jam).", "Start the story from the beginning (about 1 hour).")})
+		opts.append({"id": "touch", "label": Game.L("Kontrol: Sentuh (HP)", "Controls: Touch (phone)") if Game.touch_mode else Game.L("Kontrol: PC (keyboard)", "Controls: PC (keyboard)"), "icon": "res://assets/ui/icon_heart.png", "desc": Game.L("Sentuh = joystick & tombol besar di layar untuk HP. PC = keyboard/mouse.", "Touch = on-screen joystick & big buttons for phones. PC = keyboard/mouse.")})
 		opts.append({"id": "lang", "label": Game.L("Bahasa: Indonesia", "Language: English"), "icon": "res://assets/ui/icon_shield.png", "desc": Game.L("Ganti bahasa teks. Suara tetap bahasa Jepang.", "Switch text language. Voices stay in Japanese.")})
 		if Game.autoplay and not Game.has_save():
 			break
-		c = await m.open(opts, "", Vector2(515, 520), false)
+		t.prompt.visible = false
+		m.desc_panel.position = Vector2(290, 640)
+		c = await m.open(opts, "", Vector2(515, 400), false)
+		if c == "touch":
+			Game.set_touch(not Game.touch_mode)
+			continue
 		if c != "lang":
 			break
 		Game.set_lang("en" if Game.lang == "id" else "id")
@@ -147,6 +153,8 @@ func _continue_world(w: World, area: String) -> void:
 			_world(area)
 		"gate":
 			await _final()
+		"reload":
+			_world(area)
 		"title":
 			await cover()
 			_title()

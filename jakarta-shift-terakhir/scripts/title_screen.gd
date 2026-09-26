@@ -82,7 +82,7 @@ func _ready() -> void:
 	var tw2 := logo.create_tween()
 	tw2.tween_property(logo, "scale", Vector2.ONE, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-	prompt = Fx.label(Game.L("TEKAN  Z  /  KLIK  UNTUK  MULAI", "PRESS  Z  /  CLICK  TO  START"), 40, Color.WHITE, 12)
+	prompt = Fx.label(Game.L("SENTUH  UNTUK  MULAI", "TAP  TO  START") if Game.touch_mode else Game.L("TEKAN  Z  /  KLIK  UNTUK  MULAI", "PRESS  Z  /  CLICK  TO  START"), 40, Color.WHITE, 12)
 	prompt.size = Vector2(1280, 60)
 	prompt.position = Vector2(0, 470)
 	add_child(prompt)

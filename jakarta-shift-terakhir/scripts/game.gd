@@ -155,6 +155,7 @@ const EN := {
 }
 
 var lang := "id"
+var touch_mode := false
 
 
 ## Pilih teks sesuai bahasa: L("indonesia", "english").
@@ -167,20 +168,27 @@ func T(s: String) -> String:
 	return EN.get(s, s) if lang == "en" else s
 
 
+func set_touch(v: bool) -> void:
+	touch_mode = v
+	set_lang(lang)
+
+
 func set_lang(l: String) -> void:
 	lang = l
 	var f := FileAccess.open("user://settings.json", FileAccess.WRITE)
 	if f:
-		f.store_string(JSON.stringify({"lang": lang}))
+		f.store_string(JSON.stringify({"lang": lang, "touch": touch_mode}))
 	changed.emit()
 
 
 func _load_settings() -> void:
+	touch_mode = OS.has_feature("web_android") or OS.has_feature("web_ios") or OS.has_feature("mobile")
 	if FileAccess.file_exists("user://settings.json"):
 		var f := FileAccess.open("user://settings.json", FileAccess.READ)
 		var d = JSON.parse_string(f.get_as_text())
 		if typeof(d) == TYPE_DICTIONARY:
 			lang = d.get("lang", "id")
+			touch_mode = d.get("touch", touch_mode)
 
 
 var party := {}

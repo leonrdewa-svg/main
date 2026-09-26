@@ -9,6 +9,12 @@ var _cache := {}
 var _music: AudioStreamPlayer
 var _music_old: AudioStreamPlayer
 var current := ""
+var duck := 0.0:
+	set(v):
+		duck = v
+		if _music and _music.playing and not _fading:
+			_music.volume_db = MUSIC_DB - 11.0 * duck
+var _fading := false
 
 
 func _ready() -> void:
@@ -67,11 +73,15 @@ func music(name: String, fade := 0.8) -> void:
 	_music.volume_db = -30.0 if fade > 0 else MUSIC_DB
 	_music.play()
 	if fade > 0:
-		create_tween().tween_property(_music, "volume_db", MUSIC_DB, fade * 0.6)
+		_fading = true
+		var tw := create_tween()
+		tw.tween_property(_music, "volume_db", MUSIC_DB, fade * 0.6)
+		tw.tween_callback(func(): _fading = false)
 
 
 func stop_music(fade := 0.6) -> void:
 	current = ""
+	_fading = true
 	if _music.playing:
 		var tw := create_tween()
 		tw.tween_property(_music, "volume_db", -40.0, fade)

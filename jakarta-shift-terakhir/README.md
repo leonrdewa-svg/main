@@ -48,7 +48,10 @@ Tes otomatis: `godot --path . -- --autoplay --shots=/tmp/shots`.
 ## Bahasa & suara
 
 - Teks: Indonesia / English (ganti di menu judul atau menu C). Suara: bahasa Jepang.
-- Suara dibuat dengan Open JTalk: Tara & NPC perempuan pakai HTS voice *tohoku-f01*
-  (CC BY 4.0, Tohoku University), Raka & NPC laki-laki pakai *nitech_jp_atr503_m001* (CC BY 3.0).
+- Suara dibuat dengan **VOICEVOX** (TTS neural, gaya emosi):
+  VOICEVOX:もち子さん (Tara), VOICEVOX:青山龍星 (Raka), VOICEVOX:No.7 (narator),
+  VOICEVOX:東北イタコ, 四国めたん, 玄野武宏, 剣崎雌雄, 麒ヶ島宗麟, 雀松朱司, 白上虎太郎, 後鬼.
+- Mode kontrol: **PC** (keyboard/mouse) atau **Sentuh** (joystick & tombol layar untuk HP),
+  terdeteksi otomatis, bisa diganti di menu judul / menu C. Di HP main dalam mode landscape.
 
 Kredit: art dari user; font Bangers & Archivo Narrow (OFL); plugin Godot AI (MIT).

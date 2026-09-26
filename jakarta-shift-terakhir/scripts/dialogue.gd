@@ -87,7 +87,7 @@ func _speaker(id: String, mood: String) -> Dictionary:
 	return {"name": id, "color": Color("3a3440"), "tex": null}
 
 
-func play(lines: Array) -> void:
+func play(lines: Array, key := "") -> void:
 	visible = true
 	_active = true
 	panel.scale = Vector2(1, 0)
@@ -96,8 +96,14 @@ func play(lines: Array) -> void:
 	tw.tween_property(panel, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	Sfx.play("sfx_paper", -6.0)
 	await tw.finished
-	for line in lines:
-		await _show(line[0], line[1], line[2])
+	for i in lines.size():
+		var line: Array = lines[i]
+		var txt: String = line[2]
+		if Game.lang == "en" and line.size() > 3:
+			txt = line[3]
+		Voice.line(key, i)
+		await _show(line[0], line[1], txt)
+	Voice.stop()
 	_active = false
 	var tw2 := create_tween()
 	tw2.tween_property(panel, "scale", Vector2(1, 0), 0.12)
@@ -116,7 +122,7 @@ func _show(who: String, mood: String, text: String) -> void:
 		portrait_bg.scale = Vector2(0.85, 0.85)
 		portrait_bg.create_tween().tween_property(portrait_bg, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK)
 	name_tag.add_theme_stylebox_override("panel", Game.paper_box(sp.color, Game.INK, 8, 4))
-	name_l.text = String(sp.name).to_upper()
+	name_l.text = Game.T(String(sp.name)).to_upper()
 	var narr: bool = sp.name == "narator"
 	text_l.position.x = 100 if has_portrait else 40
 	text_l.size.x = 850 if has_portrait else 900

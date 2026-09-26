@@ -33,12 +33,9 @@ var _auto_t := 0.0
 
 func _ready() -> void:
 	A = Story.AREAS[area_id]
-	var bg := Sprite2D.new()
-	bg.texture = load(A.bg)
-	bg.position = Vector2(640, 360)
-	var s := maxf(1280.0 / bg.texture.get_width(), 720.0 / bg.texture.get_height())
-	bg.scale = Vector2(s, s)
+	var bg := LiveBg.new()
 	add_child(bg)
+	bg.setup(A.bg)
 	actors = Node2D.new()
 	actors.y_sort_enabled = true
 	add_child(actors)
@@ -46,14 +43,14 @@ func _ready() -> void:
 	# penanda interaksi
 	_mark("station", A.station, "MRT", Color("1d4f9c"))
 	if A.has("shop"):
-		_mark("shop", A.shop, "WARUNG BU SARI", Color("c0392b"))
+		_mark("shop", A.shop, Game.L("WARUNG BU SARI", "BU SARI'S STALL"), Color("c0392b"))
 		var bs := Sprite2D.new()
 		bs.texture = load("res://assets/world/face_busari.png")
 		bs.scale = Vector2(0.32, 0.32)
 		bs.position = A.shop + Vector2(0, -70)
 		actors.add_child(bs)
 	if A.has("gate"):
-		_mark("gate", A.gate, "GERBANG MENARA (%d/3)" % Game.cards(), Color("8a1a32"))
+		_mark("gate", A.gate, Game.L("GERBANG MENARA (%d/3)", "TOWER GATE (%d/3)") % Game.cards(), Color("8a1a32"))
 
 	for n in A.npcs:
 		_add_npc(n.sprite, n.pos, {"talk": n.talk, "who": n.who})
@@ -61,7 +58,7 @@ func _ready() -> void:
 		if Game.flag("def_" + e.id):
 			var kind: String = Game.enemy_data(e.group[0]).kind
 			var spr: String = "res://assets/world/%s.png" % Game.ENEMIES[kind].npc
-			_add_npc(spr, e.pos, {"freed": true, "line": Story.FREED[abs(e.id.hash()) % Story.FREED.size()]})
+			_add_npc(spr, e.pos, {"freed": true, "n": abs(e.id.hash()) % Story.FREED.size()})
 		else:
 			var r := Roamer.new()
 			r.def = e
@@ -139,7 +136,7 @@ func _build_ui() -> void:
 	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top.add_theme_stylebox_override("panel", Game.paper_box(Color(0.12, 0.1, 0.14, 0.88), Game.INK, 10, 5))
 	ui.add_child(top)
-	var an := Fx.label(String(A.name).to_upper(), 32, Game.YELLOW, 8)
+	var an := Fx.label(Story.area_name(area_id).to_upper(), 32, Game.YELLOW, 8)
 	an.position = Vector2(14, 0)
 	an.size = Vector2(800, 40)
 	an.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -161,7 +158,7 @@ func _build_ui() -> void:
 	money_l.size = Vector2(240, 62)
 	money_l.add_theme_font_size_override("font_size", 22)
 	mp.add_child(money_l)
-	var hint := Fx.label("Panah/WASD: jalan   Z: bicara/serang duluan   C: menu   (klik = jalan ke sana)", 18, Game.CREAM, 6, Game.FONT_UI)
+	var hint := Fx.label(Game.L("Panah/WASD: jalan   Z: bicara/serang duluan   C: menu   (klik = jalan ke sana)", "Arrows/WASD: walk   Z: talk/strike first   C: menu   (click = walk there)"), 18, Game.CREAM, 6, Game.FONT_UI)
 	hint.position = Vector2(0, 692)
 	hint.size = Vector2(1280, 26)
 	ui.add_child(hint)
@@ -183,17 +180,17 @@ func _build_ui() -> void:
 
 
 func refresh_ui() -> void:
-	obj_l.text = "Tujuan: " + Story.objective()
+	obj_l.text = Game.L("Tujuan: ", "Goal: ") + Story.objective()
 	var r: Dictionary = Game.party.raka
 	var t: Dictionary = Game.party.tara
-	money_l.text = "%s   Kartu %d/3\nRaka %d/%d  ·  Tara %d/%d" % [Game.rp(Game.money), Game.cards(), r.hp, r.max_hp, t.hp, t.max_hp]
+	money_l.text = Game.L("%s   Kartu %d/3\nRaka %d/%d  ·  Tara %d/%d", "%s   Cards %d/3\nRaka %d/%d  ·  Tara %d/%d") % [Game.rp(Game.money), Game.cards(), r.hp, r.max_hp, t.hp, t.max_hp]
 
 
-func talk(lines: Array) -> void:
+func talk(lines: Array, key := "") -> void:
 	busy = true
 	player.moving = false
 	tara.moving = false
-	await dialog.play(lines)
+	await dialog.play(lines, key)
 	busy = false
 
 
@@ -272,7 +269,7 @@ func _update_prompt() -> void:
 		prompt_l.visible = false
 		return
 	prompt_l.visible = true
-	var txt := {"npc": "Z: BICARA", "station": "Z: MRT", "shop": "Z: WARUNG", "gate": "Z: GERBANG", "enemy": "Z: SERANG DULUAN!"}
+	var txt := {"npc": Game.L("Z: BICARA", "Z: TALK"), "station": "Z: MRT", "shop": Game.L("Z: WARUNG", "Z: SHOP"), "gate": Game.L("Z: GERBANG", "Z: GATE"), "enemy": Game.L("Z: SERANG DULUAN!", "Z: STRIKE FIRST!")}
 	prompt_l.text = txt.get(n.type, "Z")
 	prompt_l.label_settings.font_color = Color("ff6a6a") if n.type == "enemy" else Game.YELLOW
 	prompt_l.position = player.position + Vector2(-150, -230)
@@ -318,9 +315,10 @@ func _interact(n: Dictionary) -> void:
 		"npc":
 			var info: Dictionary = n.ref.info
 			if info.get("freed", false):
-				await talk([["pekerja", "", info.line]])
+				var fl: Array = Story.FREED[info.n]
+				await talk([["pekerja", "", fl[0], fl[1], fl[2]]], "freed_%d" % info.n)
 			else:
-				await talk(Story.D[info.talk])
+				await talk(Story.D[info.talk], info.talk)
 		"station":
 			Game.pos = player.position
 			busy = true
@@ -333,7 +331,8 @@ func _interact(n: Dictionary) -> void:
 			if Game.cards() < 3:
 				var l: Array = Story.D.gate_locked.duplicate(true)
 				l[0][2] = l[0][2] % Game.cards()
-				await talk(l)
+				l[0][3] = l[0][3] % Game.cards()
+				await talk(l, "gate_locked")
 			else:
 				Game.pos = player.position
 				busy = true
@@ -354,7 +353,7 @@ func _start_battle(r: Roamer, strike: String) -> void:
 	player.moving = false
 	Game.pos = player.position
 	if r.def.get("boss", false):
-		await dialog.play(Story.D[r.def.pre])
+		await dialog.play(Story.D[r.def.pre], r.def.pre)
 		strike = ""
 	else:
 		r.flash_alert()
@@ -367,22 +366,27 @@ func _pause_menu() -> void:
 	player.moving = false
 	while true:
 		var c = await menu.open([
-			{"id": "bag", "label": "Tas", "icon": "res://assets/sprites/item_tas.png", "desc": "Pakai makanan & minuman.", "enabled": Game.bag_total() > 0},
-			{"id": "status", "label": "Status", "icon": "res://assets/ui/icon_star.png", "desc": "Level, HP, dan ATK party."},
-			{"id": "save", "label": "Simpan", "icon": "res://assets/ui/icon_shield.png", "desc": "Simpan progres di browser/PC ini."},
-			{"id": "title", "label": "Ke Judul", "icon": "res://assets/ui/icon_sp.png", "desc": "Kembali ke layar judul (progres terakhir yang disimpan tetap ada)."},
+			{"id": "bag", "label": Game.L("Tas", "Bag"), "icon": "res://assets/sprites/item_tas.png", "desc": Game.L("Pakai makanan & minuman.", "Use food & drinks."), "enabled": Game.bag_total() > 0},
+			{"id": "status", "label": "Status", "icon": "res://assets/ui/icon_star.png", "desc": Game.L("Level, HP, dan ATK party.", "Party level, HP and ATK.")},
+			{"id": "lang", "label": Game.L("Bahasa: Indonesia", "Language: English"), "icon": "res://assets/ui/icon_sp.png", "desc": Game.L("Ganti bahasa teks (suara tetap Jepang).", "Switch text language (voices stay Japanese).")},
+			{"id": "save", "label": Game.L("Simpan", "Save"), "icon": "res://assets/ui/icon_shield.png", "desc": Game.L("Simpan progres di browser/PC ini.", "Save your progress on this browser/PC.")},
+			{"id": "title", "label": Game.L("Ke Judul", "Title Screen"), "icon": "res://assets/ui/icon_sp.png", "desc": Game.L("Kembali ke layar judul (progres terakhir yang disimpan tetap ada).", "Return to the title screen (your last save is kept).")},
 		], "MENU", Vector2(80, 180))
 		if c == null:
 			break
 		match c:
 			"bag":
 				await _bag_menu()
+			"lang":
+				Game.set_lang("en" if Game.lang == "id" else "id")
+				Sfx.play("sfx_confirm")
+				refresh_ui()
 			"status":
 				var lines := []
 				for id in ["raka", "tara"]:
 					var p: Dictionary = Game.party[id]
 					lines.append([id, "normal", "Lv %d   HP %d/%d   ATK %d   EXP %d/%d" % [p.level, p.hp, p.max_hp, p.atk, p.exp, Game.exp_next(p.level)]])
-				lines.append(["narator", "", "Parry: %d   Perfect: %d   Pertarungan: %d   Waktu main: %d menit" % [Game.stats.parry, Game.stats.perfect, Game.stats.battles, int(Game.play_time / 60)]])
+				lines.append(["narator", "", Game.L("Parry: %d   Perfect: %d   Pertarungan: %d   Waktu main: %d menit", "Parry: %d   Perfect: %d   Battles: %d   Play time: %d min") % [Game.stats.parry, Game.stats.perfect, Game.stats.battles, int(Game.play_time / 60)]])
 				menu.close()
 				await dialog.play(lines)
 			"save":
@@ -390,7 +394,7 @@ func _pause_menu() -> void:
 				Game.area = area_id
 				Game.save_game()
 				Sfx.play("sfx_star")
-				menu.say("Tersimpan!")
+				menu.say(Game.L("Tersimpan!", "Saved!"))
 				await get_tree().create_timer(0.8).timeout
 			"title":
 				menu.close()
@@ -406,17 +410,17 @@ func _bag_menu() -> void:
 		var opts := []
 		for iid in Game.bag:
 			var it: Dictionary = Game.ITEMS[iid]
-			opts.append({"id": iid, "label": it.name, "right": "x%d" % Game.bag[iid], "icon": it.icon, "desc": it.desc,
+			opts.append({"id": iid, "label": Game.T(it.name), "right": "x%d" % Game.bag[iid], "icon": it.icon, "desc": Game.T(it.desc),
 				"enabled": it.has("hp") or it.get("cure", false)})
 		if opts.is_empty():
 			return
-		var iid2 = await menu.open(opts, "TAS", Vector2(80, 180))
+		var iid2 = await menu.open(opts, Game.L("TAS", "BAG"), Vector2(80, 180))
 		if iid2 == null:
 			return
 		var who = await menu.open([
 			{"id": "raka", "label": "Raka  %d/%d" % [Game.party.raka.hp, Game.party.raka.max_hp], "icon": "res://assets/sprites/face_raka_datar.png", "desc": ""},
 			{"id": "tara", "label": "Tara  %d/%d" % [Game.party.tara.hp, Game.party.tara.max_hp], "icon": "res://assets/sprites/face_tara_skeptis.png", "desc": ""},
-		], "UNTUK SIAPA?", Vector2(80, 180))
+		], Game.L("UNTUK SIAPA?", "FOR WHOM?"), Vector2(80, 180))
 		if who == null:
 			continue
 		var it2: Dictionary = Game.ITEMS[iid2]

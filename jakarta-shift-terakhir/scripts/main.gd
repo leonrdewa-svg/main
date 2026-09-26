@@ -58,15 +58,21 @@ func _title() -> void:
 	var t := TitleScreen.new()
 	_swap(t)
 	await t.start
-	var opts := []
-	if Game.has_save():
-		opts.append({"id": "load", "label": "Lanjutkan", "icon": "res://assets/ui/icon_star.png", "desc": "Lanjut dari simpanan terakhir."})
-	opts.append({"id": "new", "label": "Main Baru", "icon": "res://assets/ui/icon_sp.png", "desc": "Mulai cerita dari awal (sekitar 1 jam)."})
 	var m := CommandMenu.new()
 	t.add_child(m)
 	var c = "new"
-	if not Game.autoplay or Game.has_save():
-		c = await m.open(opts, "", Vector2(515, 540), false)
+	while true:
+		var opts := []
+		if Game.has_save():
+			opts.append({"id": "load", "label": Game.L("Lanjutkan", "Continue"), "icon": "res://assets/ui/icon_star.png", "desc": Game.L("Lanjut dari simpanan terakhir.", "Continue from your last save.")})
+		opts.append({"id": "new", "label": Game.L("Main Baru", "New Game"), "icon": "res://assets/ui/icon_sp.png", "desc": Game.L("Mulai cerita dari awal (sekitar 1 jam).", "Start the story from the beginning (about 1 hour).")})
+		opts.append({"id": "lang", "label": Game.L("Bahasa: Indonesia", "Language: English"), "icon": "res://assets/ui/icon_shield.png", "desc": Game.L("Ganti bahasa teks. Suara tetap bahasa Jepang.", "Switch text language. Voices stay in Japanese.")})
+		if Game.autoplay and not Game.has_save():
+			break
+		c = await m.open(opts, "", Vector2(515, 520), false)
+		if c != "lang":
+			break
+		Game.set_lang("en" if Game.lang == "id" else "id")
 	await cover()
 	if c == "load" and Game.load_game():
 		_world(Game.area)
@@ -85,7 +91,7 @@ func _world(area: String, intro := false) -> void:
 	await reveal()
 	Game.shot("dunia_" + area)
 	if intro:
-		await w.talk(Story.D.intro)
+		await w.talk(Story.D.intro, "intro")
 	_continue_world(w, area)
 
 
@@ -97,7 +103,7 @@ func _battle(area: String, def: Dictionary, strike: String) -> void:
 	b.first_strike = strike
 	b.music = "bgm_boss" if def.get("boss", false) else "bgm_battle"
 	if def.get("boss", false):
-		b.title = "BOS: " + Game.enemy_data(def.group[0]).name.to_upper()
+		b.title = Game.L("BOS: ", "BOSS: ") + Game.T(Game.enemy_data(def.group[0]).name).to_upper()
 	_swap(b)
 	await reveal()
 	var result := await b.run()
@@ -110,11 +116,11 @@ func _battle(area: String, def: Dictionary, strike: String) -> void:
 		_swap(w)
 		await reveal()
 		if def.has("post"):
-			await w.talk(Story.D[def.post])
+			await w.talk(Story.D[def.post], def.post)
 			Game.set_flag(def.card)
 			Sfx.play("sfx_star")
 		if area == "dukuh" and not Game.flag("prolog_done") and Game.flag("def_da_1") and Game.flag("def_da_2"):
-			await w.talk(Story.D.prolog_done)
+			await w.talk(Story.D.prolog_done, "prolog_done")
 			Game.set_flag("prolog_done")
 		w.refresh_ui()
 		Game.save_game()
@@ -169,7 +175,7 @@ func _map() -> void:
 
 func _final() -> void:
 	var w: World = current
-	await w.talk(Story.D.final_pre)
+	await w.talk(Story.D.final_pre, "final_pre")
 	await _battle_final()
 
 
@@ -179,7 +185,7 @@ func _battle_final() -> void:
 	b.bg_path = Story.AREAS.scbd.bg
 	b.group = ["lembur_abadi"]
 	b.music = "bgm_boss"
-	b.title = "BOS TERAKHIR: LEMBUR ABADI"
+	b.title = Game.L("BOS TERAKHIR: LEMBUR ABADI", "FINAL BOSS: ETERNAL OVERTIME")
 	_swap(b)
 	await reveal()
 	var result := await b.run()
@@ -191,11 +197,11 @@ func _battle_final() -> void:
 
 
 func _game_over(area: String) -> void:
-	var v = await _card_screen("KAMU LEMBUR...", Color("ff6a6a"),
-		["Tara dan Raka tumbang. Tapi Bu Sari menemukan kalian dan memberi teh hangat.",
-		 "HP pulih. Kalian kembali ke papan MRT (uang -10%)."],
-		[{"id": "retry", "label": "Bangkit Lagi", "icon": "res://assets/ui/icon_star.png", "desc": ""},
-		 {"id": "title", "label": "Ke Judul", "icon": "res://assets/ui/icon_shield.png", "desc": ""}])
+	var v = await _card_screen(Game.L("KAMU LEMBUR...", "OVERTIME WINS..."), Color("ff6a6a"),
+		[Game.L("Tara dan Raka tumbang. Tapi Bu Sari menemukan kalian dan memberi teh hangat.", "Tara and Raka collapsed. But Bu Sari found you and brought warm tea."),
+		 Game.L("HP pulih. Kalian kembali ke papan MRT (uang -10%).", "HP restored. You're back at the MRT sign (money -10%).")],
+		[{"id": "retry", "label": Game.L("Bangkit Lagi", "Get Back Up"), "icon": "res://assets/ui/icon_star.png", "desc": ""},
+		 {"id": "title", "label": Game.L("Ke Judul", "Title Screen"), "icon": "res://assets/ui/icon_shield.png", "desc": ""}])
 	await cover()
 	Game.full_heal()
 	Game.money = int(Game.money * 0.9)
@@ -208,21 +214,19 @@ func _game_over(area: String) -> void:
 
 func _ending() -> void:
 	var root := Node2D.new()
-	var bg := Sprite2D.new()
-	bg.texture = load("res://assets/bg/dukuh_atas.jpg")
-	bg.position = Vector2(640, 360)
-	bg.scale = Vector2.ONE * (1280.0 / bg.texture.get_width())
+	var bg := LiveBg.new()
 	root.add_child(bg)
+	bg.setup("res://assets/bg/dukuh_atas.jpg")
 	_swap(root)
 	Sfx.music("bgm_title")
 	await reveal()
-	await dialog.play(Story.D.ending)
+	await dialog.play(Story.D.ending, "ending")
 	await cover()
 	var mins := int(Game.play_time / 60.0)
-	await _card_screen("SHIFT SELESAI!", Game.YELLOW, [
-		"Terima kasih sudah bermain JAKARTA: SHIFT TERAKHIR!",
-		"Raka Lv %d · Tara Lv %d · Parry %d · Perfect %d · Waktu %d menit" % [Game.party.raka.level, Game.party.tara.level, Game.stats.parry, Game.stats.perfect, mins],
-	], [{"id": "title", "label": "Kembali ke Judul", "icon": "res://assets/ui/icon_star.png", "desc": ""}],
+	await _card_screen(Game.L("SHIFT SELESAI!", "SHIFT OVER!"), Game.YELLOW, [
+		Game.L("Terima kasih sudah bermain JAKARTA: SHIFT TERAKHIR!", "Thank you for playing JAKARTA: LAST SHIFT!"),
+		Game.L("Raka Lv %d · Tara Lv %d · Parry %d · Perfect %d · Waktu %d menit", "Raka Lv %d · Tara Lv %d · Parry %d · Perfect %d · Time %d min") % [Game.party.raka.level, Game.party.tara.level, Game.stats.parry, Game.stats.perfect, mins],
+	], [{"id": "title", "label": Game.L("Kembali ke Judul", "Back to Title"), "icon": "res://assets/ui/icon_star.png", "desc": ""}],
 	["res://assets/sprites/raka_attack.png", "res://assets/sprites/tara_attack.png"])
 	await cover()
 	_title()

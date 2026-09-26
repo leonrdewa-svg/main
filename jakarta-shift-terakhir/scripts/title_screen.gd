@@ -16,6 +16,10 @@ func _ready() -> void:
 	bg = Sprite2D.new()
 	bg.texture = load("res://assets/bg/dukuh_atas.jpg")
 	bg.position = Vector2(640, 360)
+	var mat := ShaderMaterial.new()
+	mat.shader = LiveBg.SHADER
+	mat.set_shader_parameter("warm", 1.0)
+	bg.material = mat
 	add_child(bg)
 	var shade := ColorRect.new()
 	shade.size = Vector2(1280, 720)
@@ -69,7 +73,7 @@ func _ready() -> void:
 	main.size = Vector2(1000, 160)
 	main.position = Vector2(-500, -84)
 	logo.add_child(main)
-	var sub := Fx.label("— RPG JELAJAH JAKARTA —", 30, Game.YELLOW, 9)
+	var sub := Fx.label(Game.L("— RPG JELAJAH JAKARTA —", "— A JAKARTA ADVENTURE RPG —"), 30, Game.YELLOW, 9)
 	sub.size = Vector2(600, 40)
 	sub.position = Vector2(-300, 80)
 	logo.add_child(sub)
@@ -78,11 +82,11 @@ func _ready() -> void:
 	var tw2 := logo.create_tween()
 	tw2.tween_property(logo, "scale", Vector2.ONE, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-	prompt = Fx.label("TEKAN  Z  /  KLIK  UNTUK  MULAI", 40, Color.WHITE, 12)
+	prompt = Fx.label(Game.L("TEKAN  Z  /  KLIK  UNTUK  MULAI", "PRESS  Z  /  CLICK  TO  START"), 40, Color.WHITE, 12)
 	prompt.size = Vector2(1280, 60)
 	prompt.position = Vector2(0, 470)
 	add_child(prompt)
-	var help := Fx.label("Z / Spasi / Enter: pilih & aksi     X / Esc: batal     Panah / Mouse: navigasi", 22, Game.CREAM, 7, Game.FONT_UI)
+	var help := Fx.label(Game.L("Z / Spasi / Enter: pilih & aksi     X / Esc: batal     Panah / Mouse: navigasi", "Z / Space / Enter: select & act     X / Esc: back     Arrows / Mouse: navigate"), 22, Game.CREAM, 7, Game.FONT_UI)
 	help.size = Vector2(1280, 30)
 	help.position = Vector2(0, 676)
 	add_child(help)

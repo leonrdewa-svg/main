@@ -20,9 +20,9 @@ Godot **4.5+** (dites 4.7) → Import `project.godot` → **F5**. Progres tersim
 - **Musuh berkeliaran**: sentuh = diserang duluan; tekan Z dari dekat = **Serangan Pertama** (musuh -15% HP).
 - **Battle gaya Expedition 33**
   - Timeline giliran berdasar SPD.
-  - Serang = combo pukulan & tendangan, tiap hit ikuti tombol QTE (Z, X, panah). PERFECT = damage lebih besar.
-  - Musuh menyerang dengan ritme berbeda-beda: **PARRY** (Z, jendela sempit) atau **DODGE** (X, lebih longgar).
-    Hit merah = tidak bisa di-parry. Parry semua hit = **COUNTER**.
+  - Serang = combo pukulan & tendangan, semua pakai Z: TEKAN pas, TAHAN lalu lepas di hijau, atau TEKAN TERUS. PERFECT = damage lebih besar.
+  - Musuh menyerang dengan ritme berbeda-beda. Lingkaran yang menyusut ke hero = waktu kena: **PARRY** (Z) atau **DODGE** (X).
+    Lingkaran merah = tidak bisa di-parry. Parry semua hit = **COUNTER**.
   - **AP** untuk jurus (Tinju Komuter, Tendangan Putar, Sapuan Kaki, Badai Dokumen, dll).
   - Meter **SEMANGAT** penuh = **Pamungkas** duo.
 - **Level & EXP**, uang Rupiah, **Warung Bu Sari** (beli nasi bungkus, kopi susu, dll).
@@ -44,5 +44,11 @@ scripts/
 ```
 
 Tes otomatis: `godot --path . -- --autoplay --shots=/tmp/shots`.
+
+## Bahasa & suara
+
+- Teks: Indonesia / English (ganti di menu judul atau menu C). Suara: bahasa Jepang.
+- Suara dibuat dengan Open JTalk: Tara & NPC perempuan pakai HTS voice *tohoku-f01*
+  (CC BY 4.0, Tohoku University), Raka & NPC laki-laki pakai *nitech_jp_atr503_m001* (CC BY 3.0).
 
 Kredit: art dari user; font Bangers & Archivo Narrow (OFL); plugin Godot AI (MIT).

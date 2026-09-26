@@ -24,7 +24,7 @@ func _ready() -> void:
 	add_child(scene)
 	var ui := CanvasLayer.new()
 	add_child(ui)
-	var title := Fx.label("WARUNG BU SARI", 60, Game.YELLOW, 14)
+	var title := Fx.label(Game.L("WARUNG BU SARI", "BU SARI'S STALL"), 60, Game.YELLOW, 14)
 	title.position = Vector2(740, 20)
 	title.size = Vector2(520, 80)
 	title.rotation = deg_to_rad(-2)
@@ -52,22 +52,22 @@ func _ready() -> void:
 
 
 func _refresh() -> void:
-	wallet.text = "DOMPET  %s" % Game.rp(Game.money)
+	wallet.text = Game.L("DOMPET  %s", "WALLET  %s") % Game.rp(Game.money)
 
 
 func _run() -> void:
 	_refresh()
-	await dialog.play(Story.D.busari_hi)
+	await dialog.play(Story.D.busari_hi, "busari_hi")
 	Game.shot("warung")
 	while true:
 		_refresh()
 		var opts := []
 		for id in STOCK:
 			var it: Dictionary = Game.ITEMS[id]
-			opts.append({"id": id, "label": it.name, "right": Game.rp(it.price), "icon": it.icon,
-				"desc": "%s  (punya: %d)" % [it.desc, Game.bag.get(id, 0)], "enabled": Game.money >= it.price})
-		opts.append({"id": "rest", "label": "Numpang Istirahat", "right": "gratis", "icon": "res://assets/ui/icon_heart.png",
-			"desc": "HP party pulih penuh. Bu Sari baik hati."})
+			opts.append({"id": id, "label": Game.T(it.name), "right": Game.rp(it.price), "icon": it.icon,
+				"desc": Game.L("%s  (punya: %d)", "%s  (owned: %d)") % [Game.T(it.desc), Game.bag.get(id, 0)], "enabled": Game.money >= it.price})
+		opts.append({"id": "rest", "label": Game.L("Numpang Istirahat", "Take a Rest"), "right": Game.L("gratis", "free"), "icon": "res://assets/ui/icon_heart.png",
+			"desc": Game.L("HP party pulih penuh. Bu Sari baik hati.", "Fully restores party HP. Bu Sari is kind.")})
 		if Game.autoplay:
 			await get_tree().create_timer(0.5).timeout
 			if Game.money >= 15000:
@@ -80,7 +80,7 @@ func _run() -> void:
 		if c == "rest":
 			Game.full_heal()
 			Sfx.play("sfx_heal")
-			menu.say("HP pulih penuh! \"Jangan lupa minum air putih, Nak.\"")
+			menu.say(Game.L("HP pulih penuh! \"Jangan lupa minum air putih, Nak.\"", "HP fully restored! \"Don't forget to drink water, dear.\""))
 			await get_tree().create_timer(1.0).timeout
 			continue
 		var price: int = Game.ITEMS[c].price
@@ -88,7 +88,7 @@ func _run() -> void:
 			Game.money -= price
 			Game.add_item(c)
 			Sfx.play("sfx_star")
-			menu.say("Beli %s! Terima kasih, Nak." % Game.ITEMS[c].name)
+			menu.say(Game.L("Beli %s! Terima kasih, Nak.", "Bought %s! Thank you, dear.") % Game.T(Game.ITEMS[c].name))
 			await get_tree().create_timer(0.6).timeout
 	menu.close()
 	done.emit()

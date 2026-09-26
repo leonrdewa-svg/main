@@ -50,7 +50,7 @@ func _ready() -> void:
 	op.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	op.add_theme_stylebox_override("panel", Game.paper_box(Color("2a2330"), Game.INK, 8, 4))
 	add_child(op)
-	var ol := Fx.label("GILIRAN", 18, Game.CREAM, 5)
+	var ol := Fx.label(Game.L("GILIRAN", "TURN"), 18, Game.CREAM, 5)
 	ol.position = Vector2(8, 0)
 	ol.size = Vector2(80, 22)
 	ol.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT

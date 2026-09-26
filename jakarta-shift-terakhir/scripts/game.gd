@@ -88,13 +88,13 @@ const ENEMIES := {
 
 ## Varian (mini-boss / boss) = musuh dasar + pengali + warna.
 const VARIANTS := {
-	"revisi_agung": {"base": "revisi", "name": "Revisi Agung", "hp_mul": 2.6, "atk_mul": 1.3, "scale_mul": 1.25,
+	"revisi_agung": {"base": "revisi", "name": "Revisi Agung", "hp_mul": 1.5, "atk_mul": 1.15, "scale_mul": 1.25,
 		"tint": Color(1.0, 0.8, 1.1), "boss": true, "exp": 60, "money": 30000},
-	"target_raksasa": {"base": "target", "name": "Target Raksasa", "hp_mul": 2.6, "atk_mul": 1.25, "scale_mul": 1.3,
+	"target_raksasa": {"base": "target", "name": "Target Raksasa", "hp_mul": 1.5, "atk_mul": 1.15, "scale_mul": 1.3,
 		"tint": Color(0.9, 1.1, 0.8), "boss": true, "exp": 70, "money": 30000},
-	"lembur_manajer": {"base": "lembur", "name": "Manajer Lembur", "hp_mul": 1.6, "atk_mul": 1.1, "scale_mul": 1.1,
+	"lembur_manajer": {"base": "lembur", "name": "Manajer Lembur", "hp_mul": 1.0, "atk_mul": 1.0, "scale_mul": 1.1,
 		"tint": Color(1.1, 0.85, 0.95), "boss": true, "exp": 80, "money": 35000},
-	"lembur_abadi": {"base": "lembur", "name": "LEMBUR ABADI", "hp_mul": 3.4, "atk_mul": 1.35, "scale_mul": 1.35,
+	"lembur_abadi": {"base": "lembur", "name": "LEMBUR ABADI", "hp_mul": 1.9, "atk_mul": 1.2, "scale_mul": 1.35,
 		"tint": Color(0.75, 0.6, 0.9), "boss": true, "exp": 0, "money": 0, "final": true},
 }
 
@@ -127,6 +127,62 @@ const NPCS := {
 	"satpam": {"name": "Satpam", "color": Color("2c4a7a"), "tex": "res://assets/world/npc_target.png"},
 }
 
+## Terjemahan Inggris untuk teks data (nama jurus, musuh, item...).
+const EN := {
+	"Tinju Komuter": "Commuter Punch", "Tendangan Putar": "Spinning Kick", "Teriak Jam Pulang": "Quitting Time Shout",
+	"Sapuan Kaki": "Leg Sweep", "Badai Dokumen": "Document Storm", "Semangat Pagi": "Morning Spirit",
+	"Rentetan 4 pukulan ke satu musuh. Ikuti urutan tombol!": "A 4-hit punch barrage on one enemy. Follow the Z prompts!",
+	"Tendangan berputar ke SEMUA musuh.": "A spinning kick that hits ALL enemies.",
+	"Party ATK +30% selama 2 giliran. Tanpa QTE.": "Party ATK +30% for 2 turns. No QTE.",
+	"Sapuan kaki rendah. Semua PERFECT = musuh pusing (lewat 1 giliran).": "A low leg sweep. All PERFECT = enemy is dizzy (skips a turn).",
+	"Kipas dokumen ke SEMUA musuh.": "Fan a storm of documents at ALL enemies.",
+	"Pulihkan HP satu teman (bisa bangkitkan). QTE bagus = pulih lebih banyak.": "Heal one ally (can revive). Better QTE = more healing.",
+	"Deadline": "Deadline", "Revisi": "Revision", "Target": "Quota", "Lembur": "Overtime",
+	"Revisi Agung": "Grand Revision", "Target Raksasa": "Giant Quota", "Manajer Lembur": "Overtime Manager", "LEMBUR ABADI": "ETERNAL OVERTIME",
+	"Waktu tidak pernah cukup.": "There is never enough time.", "Masih ada yang bisa diperbaiki kok.": "There's always something to fix.",
+	"Angka harus naik.": "The numbers must go up.", "Kerja masih bisa lebih banyak.": "You can always work more.",
+	"Tusuk Jarum Jam": "Clock Hand Stab", "TIK-TAK-TIK": "TICK-TOCK-TICK", "Waktu Habis!": "Time's Up!",
+	"Coret Merah": "Red Ink Slash", "Revisi Lagi :)": "Revise Again :)", "Revisi Final_v7": "Final_Final_v7",
+	"Gigit Kalkulator": "Calculator Bite", "Angka Naik Terus": "Numbers Keep Rising", "Grafik Anjlok": "Graph Crash",
+	"Tinju Lembur": "Overtime Punch", "Struk Tanpa Akhir": "Endless Receipts", "Shift Tambahan": "Extra Shift",
+	"Nasi Bungkus": "Rice Pack", "Kopi Susu": "Milk Coffee", "Air Mineral": "Mineral Water", "Roti Bakar": "Toast",
+	"Permen Jahe": "Ginger Candy", "Plester": "Bandage", "Kartu MRT": "MRT Card",
+	"+50 HP satu teman. Bisa membangunkan yang tumbang.": "+50 HP to one ally. Can revive.",
+	"+3 AP. Melek lagi.": "+3 AP. Wide awake again.", "+15 HP.": "+15 HP.", "+30 HP.": "+30 HP.",
+	"Hapus panik (efek buruk) + 10 HP.": "Cures panic (debuffs) + 10 HP.", "+25 HP.": "+25 HP.",
+	"Tap! Kereta MRT lewat: 30 damage ke semua musuh.": "Tap! The MRT train rushes past: 30 damage to all enemies.",
+	"Pekerja": "Worker", "Karyawati": "Office Worker", "Satpam": "Security Guard",
+}
+
+var lang := "id"
+
+
+## Pilih teks sesuai bahasa: L("indonesia", "english").
+func L(id_text: String, en_text: String) -> String:
+	return en_text if lang == "en" else id_text
+
+
+## Terjemahkan teks data.
+func T(s: String) -> String:
+	return EN.get(s, s) if lang == "en" else s
+
+
+func set_lang(l: String) -> void:
+	lang = l
+	var f := FileAccess.open("user://settings.json", FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify({"lang": lang}))
+	changed.emit()
+
+
+func _load_settings() -> void:
+	if FileAccess.file_exists("user://settings.json"):
+		var f := FileAccess.open("user://settings.json", FileAccess.READ)
+		var d = JSON.parse_string(f.get_as_text())
+		if typeof(d) == TYPE_DICTIONARY:
+			lang = d.get("lang", "id")
+
+
 var party := {}
 var bag := {}
 var money := 60000
@@ -145,6 +201,7 @@ var _shot_i := 0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_input()
+	_load_settings()
 	ui_theme = _make_theme()
 	get_tree().root.theme = ui_theme
 	for a in OS.get_cmdline_user_args():
@@ -240,7 +297,7 @@ func gain_exp(n: int) -> Array:
 			p.max_hp += 8
 			p.atk += 2
 			p.hp = p.max_hp
-			ups.append("%s naik ke Lv %d!  HP +8  ATK +2" % [HEROES[id].name, p.level])
+			ups.append(L("%s naik ke Lv %d!  HP +8  ATK +2", "%s reached Lv %d!  HP +8  ATK +2") % [HEROES[id].name, p.level])
 	changed.emit()
 	return ups
 

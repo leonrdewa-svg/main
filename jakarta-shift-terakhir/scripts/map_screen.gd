@@ -19,13 +19,13 @@ func _ready() -> void:
 	bg.scale = Vector2(1280.0 / bg.texture.get_width(), 720.0 / bg.texture.get_height())
 	add_child(bg)
 	for name in Story.MAP_LOCKED:
-		_pin(Story.MAP_LOCKED[name], name + " (segera)", Color(0.4, 0.4, 0.45), false)
+		_pin(Story.MAP_LOCKED[name], name + Game.L(" (segera)", " (soon)"), Color(0.4, 0.4, 0.45), false)
 	for id in Story.AREA_ORDER:
 		var a: Dictionary = Story.AREAS[id]
 		var open: bool = id == "dukuh" or Game.flag("prolog_done")
-		var label: String = a.name
+		var label: String = Story.area_name(id)
 		if id == Game.area:
-			label += " (di sini)"
+			label += Game.L(" (di sini)", " (here)")
 		var done := _area_cleared(id)
 		if done:
 			label += " ✓"
@@ -70,7 +70,7 @@ func _pin(p: Vector2, text: String, col: Color, open: bool) -> Node2D:
 	c.polygon = pts
 	c.color = col
 	n.add_child(c)
-	var l := Fx.label(text.replace(" ✓", "  [BERSIH]"), 26 if open else 20, Color.WHITE if open else Color(0.8, 0.8, 0.8), 8)
+	var l := Fx.label(text.replace(" ✓", Game.L("  [BERSIH]", "  [CLEAR]")), 26 if open else 20, Color.WHITE if open else Color(0.8, 0.8, 0.8), 8)
 	l.size = Vector2(320, 34)
 	l.position = Vector2(-160, 16)
 	n.add_child(l)
@@ -82,7 +82,7 @@ func _show() -> void:
 		pins[id].scale = Vector2.ONE
 	var cur: String = options[idx]
 	if cur == "rest":
-		info.text = "[ ISTIRAHAT & SIMPAN ]\nHP party pulih penuh dan progres disimpan.  (Z pilih · X batal · panah ganti)"
+		info.text = Game.L("[ ISTIRAHAT & SIMPAN ]\nHP party pulih penuh dan progres disimpan.  (Z pilih · X batal · panah ganti)", "[ REST & SAVE ]\nFully restores party HP and saves.  (Z select · X back · arrows switch)")
 	else:
 		pins[cur].scale = Vector2(1.35, 1.35)
 		var a: Dictionary = Story.AREAS[cur]
@@ -90,7 +90,7 @@ func _show() -> void:
 		for e in a.enemies:
 			if not Game.flag("def_" + e.id):
 				left += 1
-		info.text = "Naik MRT ke %s\nPekerja dirasuki tersisa: %d   (Z naik · X batal · panah ganti)" % [a.name, left]
+		info.text = Game.L("Naik MRT ke %s\nPekerja dirasuki tersisa: %d   (Z naik · X batal · panah ganti)", "Take the MRT to %s\nPossessed workers left: %d   (Z ride · X back · arrows switch)") % [Story.area_name(cur), left]
 
 
 func _unhandled_input(e: InputEvent) -> void:

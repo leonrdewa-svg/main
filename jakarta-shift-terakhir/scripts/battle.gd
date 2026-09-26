@@ -12,7 +12,7 @@ signal _nav(kind: String, pos: Vector2)
 
 const HERO_POS := {"raka": Vector2(250, 628), "tara": Vector2(430, 640)}
 const MENU_POS := Vector2(540, 250)
-const KEYS := ["Z", "X", "L", "R", "U", "D"]
+const KINDS := ["tap", "tap", "hold", "mash"]
 
 var bg_path := "res://assets/bg/dukuh_atas.jpg"
 var group: Array = ["deadline"]
@@ -43,16 +43,13 @@ var _phase2_done := false
 func _ready() -> void:
 	world = Node2D.new()
 	add_child(world)
-	var bg := Sprite2D.new()
-	bg.texture = load(bg_path)
-	bg.position = Vector2(640, 360)
-	var s := maxf(1280.0 / bg.texture.get_width(), 720.0 / bg.texture.get_height()) * 1.06
-	bg.scale = Vector2(s, s)
+	var bg := LiveBg.new()
 	world.add_child(bg)
+	bg.setup(bg_path, "", 1.06)
 	var dim := ColorRect.new()
 	dim.size = Vector2(1400, 800)
 	dim.position = Vector2(-60, -40)
-	dim.color = Color(0.05, 0.02, 0.08, 0.28)
+	dim.color = Color(0.05, 0.02, 0.08, 0.12)
 	world.add_child(dim)
 	units = Node2D.new()
 	units.y_sort_enabled = true
@@ -88,7 +85,7 @@ func _ready() -> void:
 		var e := Battler.new()
 		units.add_child(e)
 		e.setup(d.kind, d, false)
-		e.display_name = d.name
+		e.display_name = Game.T(d.name)
 		e.boss = d.get("boss", false)
 		if d.has("tint"):
 			e.sprite.self_modulate = d.tint
@@ -172,20 +169,21 @@ func run() -> String:
 	await tw.finished
 	for h in heroes:
 		h.idle_anim = h.alive
-	var banner := title if title != "" else "PERTARUNGAN!"
+	var banner := title if title != "" else Game.L("PERTARUNGAN!", "BATTLE!")
 	Fx.pop_text(world, Vector2(640, 250), banner, Game.YELLOW, 84, 0.7)
+	Voice.bark("raka", "start")
 	await wait(0.9)
 	if first_strike == "player":
-		Fx.pop_text(world, Vector2(640, 330), "SERANGAN PERTAMA!", Color("7dff8a"), 60, 0.6)
+		Fx.pop_text(world, Vector2(640, 330), Game.L("SERANGAN PERTAMA!", "FIRST STRIKE!"), Color("7dff8a"), 60, 0.6)
 		Sfx.play("sfx_hit_big")
 		for e in enemies:
 			await _hit_enemy(e, int(e.max_hp * 0.15), true)
 		await wait(0.5)
 	elif first_strike == "enemy":
-		Fx.pop_text(world, Vector2(640, 330), "DISERGAP!", Color("ff6a6a"), 60, 0.6)
+		Fx.pop_text(world, Vector2(640, 330), Game.L("DISERGAP!", "AMBUSHED!"), Color("ff6a6a"), 60, 0.6)
 		await wait(0.7)
 	if Game.stats.battles == 0:
-		menu.say("TIP: saat musuh menyerang, tekan Z tepat sebelum kena = PARRY. X = DODGE (lebih mudah).")
+		menu.say(Game.L("TIP: lingkaran menyusut ke hero = waktu serangan kena. Z pas di tengah = PARRY. X = DODGE.", "TIP: the ring shrinking onto your hero shows when the hit lands. Z at the center = PARRY. X = DODGE."))
 		await wait(2.4)
 	Game.shot("battle_mulai")
 	var result := await _loop()
@@ -255,7 +253,7 @@ func _check_phase2() -> void:
 			e.sprite.self_modulate = Color(0.95, 0.45, 0.75)
 			Fx.speed_lines(world, e.center(), 1.0, Color(1, 0.2, 0.5, 0.7))
 			Fx.burst(world, e.center(), "glow", 40, 1.3)
-			await Fx.cut_in(cutin_layer, e.tex_idle, "FASE 2: SETIAP HARI. SELAMANYA.", Game.PINK, true)
+			await Fx.cut_in(cutin_layer, e.tex_idle, Game.L("FASE 2: SETIAP HARI. SELAMANYA.", "PHASE 2: EVERY DAY. FOREVER."), Game.PINK, true)
 			e.atk += 3
 			e.set_meta("fast", true)
 
@@ -289,7 +287,7 @@ func _hero_turn(h: Battler) -> void:
 			h.defending = true
 			Sfx.play("sfx_buff")
 			Fx.ring(world, h.center(), Color("ffd23f"), 160)
-			Fx.pop_text(world, h.top() + Vector2(0, -30), "FOKUS +2 AP", Game.YELLOW, 48, 0.6)
+			Fx.pop_text(world, h.top() + Vector2(0, -30), Game.L("FOKUS +2 AP", "FOCUS +2 AP"), Game.YELLOW, 48, 0.6)
 			h.refresh_status_icons()
 			await wait(0.8)
 		"ultimate":
@@ -303,19 +301,19 @@ func _choose(h: Battler) -> Dictionary:
 	var d: Dictionary = h.data
 	while true:
 		var opts := [
-			{"id": "attack", "label": "Serang", "icon": "res://assets/ui/icon_star.png",
-				"desc": "Combo pukulan + tendangan. Ikuti tombol yang muncul. +1 AP."},
-			{"id": "skill", "label": "Jurus", "icon": "res://assets/ui/icon_sp.png",
-				"desc": "Jurus spesial pakai AP. AP kamu: %d" % ap[h.id]},
+			{"id": "attack", "label": Game.L("Serang", "Attack"), "icon": "res://assets/ui/icon_star.png",
+				"desc": Game.L("Combo pukulan + tendangan. Ikuti perintah Z (tekan / tahan / tekan terus). +1 AP.", "Punch + kick combo. Follow the Z prompts (tap / hold / mash). +1 AP.")},
+			{"id": "skill", "label": Game.L("Jurus", "Skills"), "icon": "res://assets/ui/icon_sp.png",
+				"desc": Game.L("Jurus spesial pakai AP. AP kamu: %d", "Special moves cost AP. Your AP: %d") % ap[h.id]},
 			{"id": "item", "label": "Item", "icon": "res://assets/sprites/item_tas.png", "enabled": Game.bag_total() > 0,
-				"desc": "Pakai barang dari tas (%d barang)." % Game.bag_total()},
-			{"id": "focus", "label": "Fokus", "icon": "res://assets/ui/icon_shield.png",
-				"desc": "Tarik napas: +2 AP dan damage diterima -30% sampai giliranmu lagi."},
+				"desc": Game.L("Pakai barang dari tas (%d barang).", "Use something from your bag (%d items).") % Game.bag_total()},
+			{"id": "focus", "label": Game.L("Fokus", "Focus"), "icon": "res://assets/ui/icon_shield.png",
+				"desc": Game.L("Tarik napas: +2 AP dan damage diterima -30% sampai giliranmu lagi.", "Breathe: +2 AP and take 30% less damage until your next turn.")},
 		]
 		if meter >= 100:
-			opts.push_front({"id": "ultimate", "label": "PAMUNGKAS!", "icon": "res://assets/ui/icon_star.png",
-				"desc": "Serangan duo Raka + Tara ke semua musuh!"})
-		var c = await menu.open(opts, "GILIRAN %s  ·  AP %d" % [String(d.name).to_upper(), ap[h.id]], MENU_POS, false)
+			opts.push_front({"id": "ultimate", "label": Game.L("PAMUNGKAS!", "ULTIMATE!"), "icon": "res://assets/ui/icon_star.png",
+				"desc": Game.L("Serangan duo Raka + Tara ke semua musuh!", "Raka + Tara duo attack on all enemies!")})
+		var c = await menu.open(opts, Game.L("GILIRAN %s  ·  AP %d", "%s'S TURN  ·  AP %d") % [String(d.name).to_upper(), ap[h.id]], MENU_POS, false)
 		match c:
 			"attack":
 				var t = await _pick_target("enemy")
@@ -324,9 +322,9 @@ func _choose(h: Battler) -> Dictionary:
 			"skill":
 				var sopts := []
 				for sk in d.skills:
-					sopts.append({"id": sk.id, "label": sk.name, "right": "%d AP" % sk.ap, "icon": "res://assets/ui/icon_sp.png",
-						"desc": sk.desc, "enabled": ap[h.id] >= sk.ap})
-				var sid = await menu.open(sopts, "JURUS  (AP %d)" % ap[h.id], MENU_POS)
+					sopts.append({"id": sk.id, "label": Game.T(sk.name), "right": "%d AP" % sk.ap, "icon": "res://assets/ui/icon_sp.png",
+						"desc": Game.T(sk.desc), "enabled": ap[h.id] >= sk.ap})
+				var sid = await menu.open(sopts, Game.L("JURUS  (AP %d)", "SKILLS  (AP %d)") % ap[h.id], MENU_POS)
 				if sid == null:
 					continue
 				var skill: Dictionary = {}
@@ -340,8 +338,8 @@ func _choose(h: Battler) -> Dictionary:
 				var iopts := []
 				for iid in Game.bag:
 					var it: Dictionary = Game.ITEMS[iid]
-					iopts.append({"id": iid, "label": it.name, "right": "x%d" % Game.bag[iid], "icon": it.icon, "desc": it.desc})
-				var iid2 = await menu.open(iopts, "TAS", MENU_POS)
+					iopts.append({"id": iid, "label": Game.T(it.name), "right": "x%d" % Game.bag[iid], "icon": it.icon, "desc": Game.T(it.desc)})
+				var iid2 = await menu.open(iopts, Game.L("TAS", "BAG"), MENU_POS)
 				if iid2 == null:
 					continue
 				var t = await _pick_target(Game.ITEMS[iid2].target)
@@ -390,13 +388,13 @@ func _pick_target(kind: String) -> Variant:
 	while true:
 		_point_at(list if multi else [list[idx]])
 		if multi:
-			menu.say("Target: SEMUA MUSUH.   [Z] pilih   [X] batal")
+			menu.say(Game.L("Target: SEMUA MUSUH.   [Z] pilih   [X] batal", "Target: ALL ENEMIES.   [Z] select   [X] back"))
 		else:
 			var b: Battler = list[idx]
 			if b.is_hero:
-				menu.say("%s  HP %d/%d   [Z] pilih  [X] batal" % [b.display_name, b.hp, b.max_hp])
+				menu.say(Game.L("%s  HP %d/%d   [Z] pilih  [X] batal", "%s  HP %d/%d   [Z] select  [X] back") % [b.display_name, b.hp, b.max_hp])
 			else:
-				menu.say("%s  HP %d/%d  —  \"%s\"" % [b.display_name, b.hp, b.max_hp, b.data.quote])
+				menu.say("%s  HP %d/%d  —  \"%s\"" % [b.display_name, b.hp, b.max_hp, Game.T(b.data.quote)])
 		var r: Array = await _nav
 		var k: String = r[0]
 		if k == "left" or k == "up":
@@ -510,11 +508,15 @@ func _power(h: Battler) -> float:
 	return p
 
 
+## Variasi QTE (semua pakai Z): tap / hold / mash. Hit pertama selalu tap.
 func _rand_keys(n: int) -> Array:
 	var ks := []
 	for i in n:
-		ks.append(KEYS[randi() % KEYS.size()])
-	ks[0] = "Z"
+		var k: String = KINDS[randi() % KINDS.size()]
+		if i > 0 and ks[i - 1] != "tap" and k != "tap":
+			k = "tap"
+		ks.append(k)
+	ks[0] = "tap"
 	return ks
 
 
@@ -529,6 +531,8 @@ func _combo(h: Battler, t: Battler, n: int, mult: float, big_finish: bool) -> in
 		if not t.alive or t.hp <= 0:
 			break
 		var r := await qte.prompt(t.center() + Vector2(0, -150), keys[i], 0.62 if i == 0 else 0.5)
+		if r != "miss":
+			Voice.bark(h.id, "hit")
 		var kick := i % 2 == 1
 		h.set_pose("kick" if kick else "attack")
 		var tw := h.create_tween()
@@ -597,20 +601,23 @@ func _hit_enemy(t: Battler, dmg: int, big: bool, tag := "") -> void:
 func _skill(h: Battler, sk: Dictionary, target: Variant) -> void:
 	match sk.id:
 		"tinju":
-			await Fx.cut_in(cutin_layer, h.tex_attack, "TINJU KOMUTER!", Game.ORANGE)
+			Voice.bark(h.id, "skill")
+			await Fx.cut_in(cutin_layer, h.tex_attack, Game.T(sk.name).to_upper() + "!", Game.ORANGE)
 			var p := await _combo(h, target, sk.keys, sk.power, true)
 			if p == sk.keys:
-				Fx.pop_text(world, Vector2(640, 260), "COMBO SEMPURNA!", Game.YELLOW, 70, 0.6)
+				Fx.pop_text(world, Vector2(640, 260), Game.L("COMBO SEMPURNA!", "PERFECT COMBO!"), Game.YELLOW, 70, 0.6)
 				add_ap(h.id, 1)
 		"sapuan":
-			await Fx.cut_in(cutin_layer, h.tex_attack, "SAPUAN KAKI!", Game.TEAL)
+			Voice.bark(h.id, "skill")
+			await Fx.cut_in(cutin_layer, h.tex_attack, Game.T(sk.name).to_upper() + "!", Game.TEAL)
 			var p := await _combo(h, target, sk.keys, sk.power, true)
 			if p == sk.keys and target.alive:
 				target.set_meta("stun", true)
-				Fx.pop_text(world, target.top() + Vector2(0, -40), "PUSING!", Color("ffd23f"), 56)
+				Fx.pop_text(world, target.top() + Vector2(0, -40), Game.L("PUSING!", "DIZZY!"), Color("ffd23f"), 56)
 				Fx.burst(world, target.top(), "stars", 12, 0.5)
 		"putar", "badai":
-			var name := "TENDANGAN PUTAR!" if sk.id == "putar" else "BADAI DOKUMEN!"
+			var name := Game.T(sk.name).to_upper() + "!"
+			Voice.bark(h.id, "skill")
 			await Fx.cut_in(cutin_layer, h.tex_attack, name, h.data.color)
 			await h.dash_to(Vector2(620, h.home.y), 0.3)
 			var keys := _rand_keys(sk.keys)
@@ -649,11 +656,11 @@ func _skill(h: Battler, sk: Dictionary, target: Variant) -> void:
 			atk_buff = 2
 			Sfx.play("sfx_buff")
 			shake(0.3)
-			Fx.pop_text(world, h.top() + Vector2(0, -40), "JAM PULANG!!", Game.ORANGE, 64)
+			Fx.pop_text(world, h.top() + Vector2(0, -40), Game.L("JAM PULANG!!", "QUITTING TIME!!"), Game.ORANGE, 64)
 			for x in _alive(heroes):
 				Fx.ring(world, x.center(), Game.ORANGE, 170, 0.45)
 				x.flash(Game.ORANGE, 0.4, 0.5)
-			menu.say("ATK party +30% selama 2 giliran!")
+			menu.say(Game.L("ATK party +30% selama 2 giliran!", "Party ATK +30% for 2 turns!"))
 			await wait(1.0)
 			h.set_pose("idle")
 
@@ -661,14 +668,16 @@ func _skill(h: Battler, sk: Dictionary, target: Variant) -> void:
 func _ultimate() -> void:
 	var r: Battler = heroes[0]
 	var t: Battler = heroes[1]
-	await Fx.cut_in(cutin_layer, r.tex_attack, "PAMUNGKAS:", Game.ORANGE)
-	await Fx.cut_in(cutin_layer, t.tex_attack, "SHIFT TERAKHIR!", Game.TEAL, true)
+	Voice.bark("raka", "ult")
+	await Fx.cut_in(cutin_layer, r.tex_attack, Game.L("PAMUNGKAS:", "ULTIMATE:"), Game.ORANGE)
+	Voice.bark("tara", "ult")
+	await Fx.cut_in(cutin_layer, t.tex_attack, Game.L("SHIFT TERAKHIR!", "LAST SHIFT!"), Game.TEAL, true)
 	var total := 0.0
 	for i in 6:
 		var who: Battler = r if i % 2 == 0 else t
 		if not who.alive:
 			who = r if r.alive else t
-		var res := await qte.prompt(Vector2(640, 280), KEYS[randi() % KEYS.size()], 0.45)
+		var res := await qte.prompt(Vector2(640, 280), KINDS[randi() % KINDS.size()], 0.5)
 		if res == "miss":
 			break
 		total += 1.4 if res == "perfect" else 1.0
@@ -705,7 +714,7 @@ func _use_item(h: Battler, id: String, target: Variant) -> void:
 	icon.z_index = 60
 	world.add_child(icon)
 	Sfx.play("sfx_star")
-	menu.say("%s pakai %s!" % [h.display_name, it.name])
+	menu.say(Game.L("%s pakai %s!", "%s uses %s!") % [h.display_name, Game.T(it.name)])
 	await wait(0.6)
 	icon.queue_free()
 	if it.has("dmg"):
@@ -726,7 +735,7 @@ func _use_item(h: Battler, id: String, target: Variant) -> void:
 
 
 func _train(dmg: int) -> void:
-	menu.say("TAP! Kereta MRT lewat!")
+	menu.say(Game.L("TAP! Kereta MRT lewat!", "TAP! The MRT train rushes past!"))
 	Sfx.play("sfx_train", 2.0)
 	var tr := Fx.Train.new()
 	tr.position = Vector2(-1250, 694)
@@ -749,7 +758,7 @@ func _train(dmg: int) -> void:
 func _enemy_turn(e: Battler) -> void:
 	if e.get_meta("stun", false):
 		e.set_meta("stun", false)
-		Fx.pop_text(world, e.top(), "pusing...", Color("ffd23f"), 40, 0.5)
+		Fx.pop_text(world, e.top(), Game.L("pusing...", "dizzy..."), Color("ffd23f"), 40, 0.5)
 		await wait(0.7)
 		return
 	var moves: Array = e.data.moves
@@ -757,7 +766,8 @@ func _enemy_turn(e: Battler) -> void:
 	if e.boss and randf() < 0.4:
 		mv = moves[moves.size() - 1]
 	var fast: bool = e.get_meta("fast", false)
-	menu.say("%s: %s" % [e.display_name, mv.name])
+	menu.say("%s: %s" % [e.display_name, Game.T(mv.name)])
+	Voice.bark("enemy", "attack")
 	e.flash(e.data.color, 0.45, 0.6)
 	Sfx.play("sfx_blip", -4.0, 0.7)
 	var all_targets: bool = mv.get("all", false)
@@ -784,8 +794,8 @@ func _enemy_turn(e: Battler) -> void:
 				break
 			tgt = al2[0]
 		var hv: bool = heavy[i] if i < heavy.size() else false
-		qte.defend_begin(tgt.top() + Vector2(0, -40), hv)
 		var delay: float = hits[i] * (0.8 if fast else 1.0)
+		qte.defend_begin(tgt.top() + Vector2(0, -40), hv, delay)
 		# antisipasi: musuh menarik ancang-ancang selama delay
 		var s := Vector2.ONE * e.base_scale
 		e.idle_anim = false
@@ -821,6 +831,7 @@ func _resolve_hit(e: Battler, t: Battler, dmg: int, res: String) -> void:
 		"parry":
 			Game.stats.parry += 1
 			Fx.pop_text(world, t.top() + Vector2(0, -70), "PARRY!", Game.YELLOW, 56, 0.35)
+			Voice.bark(t.id, "parry")
 			Fx.ring(world, t.center() + Vector2(40, -30), Game.YELLOW, 130, 0.25)
 			Fx.burst(world, t.center() + Vector2(40, -30), "stars", 8, 0.6)
 			Sfx.play("sfx_guard", 2.0, 1.2)
@@ -833,6 +844,7 @@ func _resolve_hit(e: Battler, t: Battler, dmg: int, res: String) -> void:
 			shake(0.15)
 		"dodge":
 			Fx.pop_text(world, t.top() + Vector2(0, -70), "DODGE", Color("7dd8ff"), 46, 0.3)
+			Voice.bark(t.id, "dodge")
 			Sfx.play("sfx_jump", -4.0, 1.4)
 			var tw := t.create_tween()
 			tw.tween_property(t, "position:x", t.home.x - 70, 0.08)
@@ -849,20 +861,22 @@ func _resolve_hit(e: Battler, t: Battler, dmg: int, res: String) -> void:
 			Sfx.play("sfx_hit", 0.0, 0.9, 0.1)
 			shake(0.2 + d * 0.01)
 			hud.mood(t.id, "hurt")
+			Voice.bark(t.id, "hurt")
 			if e.id == "revisi" and randf() < 0.35 and t.atk_down == 0:
 				t.atk_down = 2
 				t.refresh_status_icons()
-				Fx.pop_text(world, t.top() + Vector2(0, -100), "PANIK! ATK turun", Color("b27ae8"), 40)
+				Fx.pop_text(world, t.top() + Vector2(0, -100), Game.L("PANIK! ATK turun", "PANIC! ATK down"), Color("b27ae8"), 40)
 				Sfx.play("sfx_debuff")
 			if t.hp <= 0 and t.alive:
 				t.knock_out()
-				Fx.pop_text(world, t.top() + Vector2(0, 40), "TUMBANG!", Color("ff6a6a"), 50)
+				Fx.pop_text(world, t.top() + Vector2(0, 40), Game.L("TUMBANG!", "DOWN!"), Color("ff6a6a"), 50)
 	hud.refresh()
 	await wait(0.08)
 
 
 func _counter(h: Battler, e: Battler) -> void:
 	Fx.pop_text(world, Vector2(640, 250), "COUNTER!", Game.YELLOW, 90, 0.5)
+	Voice.bark(h.id, "counter")
 	Sfx.play("sfx_nice")
 	Engine.time_scale = 0.4
 	await get_tree().create_timer(0.25, true, false, true).timeout
@@ -913,7 +927,8 @@ func _victory() -> String:
 	panel.custom_minimum_size = Vector2(500, 0)
 	var v := VBoxContainer.new()
 	panel.add_child(v)
-	var t := Fx.label("MENANG!", 72, Game.YELLOW, 16)
+	var t := Fx.label(Game.L("MENANG!", "VICTORY!"), 72, Game.YELLOW, 16)
+	Voice.bark("raka" if heroes[0].alive else "tara", "win")
 	v.add_child(t)
 	for line in ["+%d EXP" % exp, "+%s" % Game.rp(cash)] + ups:
 		var l := Label.new()
@@ -935,7 +950,7 @@ func _defeat() -> String:
 	menu.close()
 	Sfx.stop_music(0.3)
 	Sfx.play("jingle_gameover")
-	var l := Fx.label("SEMUA TUMBANG...", 90, Color("ff6a6a"), 18)
+	var l := Fx.label(Game.L("SEMUA TUMBANG...", "ALL DOWN..."), 90, Color("ff6a6a"), 18)
 	l.size = Vector2(1280, 160)
 	l.position = Vector2(0, 220)
 	ui.add_child(l)
@@ -960,27 +975,15 @@ class TouchPad extends Control:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		visible = false
 		position = Vector2(1100, 420)
-		var layout := {"U": Vector2(56, 0), "L": Vector2(0, 50), "R": Vector2(112, 50), "D": Vector2(56, 100), "Z": Vector2(-120, 60), "X": Vector2(-66, 100)}
+		var layout := {"Z": Vector2(0, 40), "X": Vector2(70, 90)}
 		for k in layout:
 			var b := Button.new()
 			b.focus_mode = Control.FOCUS_NONE
-			b.text = {"U": "↑", "D": "↓", "L": "←", "R": "→", "Z": "Z", "X": "X"}[k]
-			if k in ["U", "D", "L", "R"]:
-				b.text = ""
-				b.icon = _arrow_icon(k)
+			b.text = k
 			b.position = layout[k]
-			b.custom_minimum_size = Vector2(50, 46)
+			b.custom_minimum_size = Vector2(64, 56)
+			b.add_theme_font_size_override("font_size", 30)
+			b.button_up.connect(func(): qte.virtual_release(k))
 			b.modulate.a = 0.75
 			b.button_down.connect(func(): qte.virtual_press(k))
 			add_child(b)
-	func _arrow_icon(k: String) -> Texture2D:
-		var img := Image.create(24, 24, false, Image.FORMAT_RGBA8)
-		var ang := {"R": 0.0, "D": PI / 2, "L": PI, "U": -PI / 2}[k] as float
-		for y in 24:
-			for x in 24:
-				var p := Vector2(x - 12, y - 12).rotated(-ang)
-				if p.x < 9 and p.x > -2 and absf(p.y) < (9 - p.x) * 0.9:
-					img.set_pixel(x, y, Game.INK)
-				elif p.x <= -2 and p.x > -10 and absf(p.y) < 3:
-					img.set_pixel(x, y, Game.INK)
-		return ImageTexture.create_from_image(img)

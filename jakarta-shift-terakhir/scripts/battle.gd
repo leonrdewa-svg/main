@@ -19,6 +19,7 @@ var group: Array = ["deadline"]
 var music := "bgm_battle"
 var first_strike := ""   # "player" / "enemy" / ""
 var title := ""
+var lvl := 1.0
 
 var world: Node2D
 var units: Node2D
@@ -49,7 +50,7 @@ func _ready() -> void:
 	var dim := ColorRect.new()
 	dim.size = Vector2(1400, 800)
 	dim.position = Vector2(-60, -40)
-	dim.color = Color(0.05, 0.02, 0.08, 0.12)
+	dim.color = Color(0.05, 0.02, 0.08, 0.0)
 	world.add_child(dim)
 	units = Node2D.new()
 	units.y_sort_enabled = true
@@ -81,7 +82,7 @@ func _ready() -> void:
 		ap[id] = 1
 	var n := group.size()
 	for i in n:
-		var d := Game.enemy_data(group[i])
+		var d := Game.enemy_data(group[i], lvl)
 		var e := Battler.new()
 		units.add_child(e)
 		e.setup(d.kind, d, false)
@@ -124,6 +125,20 @@ func _process(delta: float) -> void:
 		cam.offset = Vector2(randf_range(-k, k), randf_range(-k, k))
 	else:
 		cam.offset = Vector2.ZERO
+
+
+## Kamera sinematik: geser & zoom pelan ke titik aksi.
+func cam_focus(p: Vector2, z := 1.1, dur := 0.3) -> void:
+	var target := Vector2(640, 360).lerp(p, 0.3)
+	target.x = clampf(target.x, 590, 690)
+	target.y = clampf(target.y, 330, 390)
+	var tw := create_tween().set_parallel()
+	tw.tween_property(cam, "position", target, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.tween_property(cam, "zoom", Vector2(z, z), dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+func cam_reset(dur := 0.4) -> void:
+	cam_focus(Vector2(640, 360), 1.0, dur)
 
 
 func shake(amount: float) -> void:
@@ -199,8 +214,8 @@ func run() -> String:
 func _order() -> Array:
 	var list := _alive(heroes) + _alive(enemies)
 	list.sort_custom(func(a, b):
-		var sa: int = Game.party[a.id].spd if a.is_hero else Game.ENEMIES[a.id].spd
-		var sb: int = Game.party[b.id].spd if b.is_hero else Game.ENEMIES[b.id].spd
+		var sa: int = Game.party[a.id].spd if a.is_hero else int(a.data.get("spd", 10))
+		var sb: int = Game.party[b.id].spd if b.is_hero else int(b.data.get("spd", 10))
 		if sa == sb:
 			return a.is_hero
 		return sa > sb)
@@ -233,6 +248,10 @@ func _loop() -> String:
 			return await _defeat()
 		if atk_buff > 0:
 			atk_buff -= 1
+		for e in _alive(enemies):
+			var dn: int = e.get_meta("atk_down", 0)
+			if dn > 0:
+				e.set_meta("atk_down", dn - 1)
 		for h in heroes:
 			if h.atk_down > 0:
 				h.atk_down -= 1
@@ -248,8 +267,7 @@ func _cleanup_dead() -> void:
 
 func _check_phase2() -> void:
 	for e in enemies:
-		var d := Game.enemy_data(group[enemies.find(e)])
-		if e.alive and d.get("final", false) and not _phase2_done and e.hp <= e.max_hp / 2:
+		if e.alive and e.data.get("final", false) and not _phase2_done and e.hp <= e.max_hp / 2:
 			_phase2_done = true
 			e.charging = false
 			Sfx.play("sfx_boss_roar")
@@ -280,7 +298,10 @@ func _hero_turn(h: Battler) -> void:
 	_clear_arrows()
 	match act.kind:
 		"attack":
-			await _combo(h, act.target, 2, 1.0, false)
+			var ks := ["tap", KINDS[randi() % KINDS.size()]]
+			if Game.party[h.id].level >= 4:
+				ks.append("tap")
+			await _combo(h, act.target, ks, 1.0, false, "fisik")
 			add_ap(h.id, 1)
 		"skill":
 			add_ap(h.id, -act.skill.ap)
@@ -326,9 +347,14 @@ func _choose(h: Battler) -> Dictionary:
 					return {"kind": "attack", "target": t}
 			"skill":
 				var sopts := []
+				var hl: int = Game.party[h.id].level
 				for sk in d.skills:
-					sopts.append({"id": sk.id, "label": Game.T(sk.name), "right": "%d AP" % sk.ap, "icon": "res://assets/ui/icon_sp.png",
-						"desc": Game.T(sk.desc), "enabled": ap[h.id] >= sk.ap})
+					var locked: bool = hl < int(sk.get("lvl", 1))
+					var el: String = sk.get("elem", "")
+					var etag := "" if el == "" or el == "fisik" else "  [%s]" % Game.L(Game.ELEM_NAME[el][0], Game.ELEM_NAME[el][1])
+					sopts.append({"id": sk.id, "label": Game.T(sk.name), "right": ("Lv %d" % sk.lvl) if locked else "%d AP" % sk.ap,
+						"icon": "res://assets/ui/icon_sp.png", "enabled": (not locked) and ap[h.id] >= sk.ap,
+						"desc": (Game.L("Terbuka di Level %d.", "Unlocks at Level %d.") % sk.lvl) if locked else Game.T(sk.desc) + etag})
 				var sid = await menu.open(sopts, Game.L("JURUS  (AP %d)", "SKILLS  (AP %d)") % ap[h.id], MENU_POS)
 				if sid == null:
 					continue
@@ -525,29 +551,27 @@ func _rand_keys(n: int) -> Array:
 	return ks
 
 
-## Combo ke satu target: tiap tombol = satu pukulan/tendangan.
+## Combo ke satu target: tiap perintah Z = satu pukulan/tendangan.
 ## Kembalikan jumlah PERFECT.
-func _combo(h: Battler, t: Battler, n: int, mult: float, big_finish: bool) -> int:
+func _combo(h: Battler, t: Battler, kinds: Array, mult: float, big_finish: bool, elem := "fisik") -> int:
 	var dest := t.global_position + Vector2(-170, 6)
-	await h.dash_to(dest, 0.28)
-	var keys := _rand_keys(n)
+	cam_focus((dest + t.global_position) / 2.0 + Vector2(0, -120), 1.12, 0.35)
+	await h.dash_to(dest, 0.3)
 	var perfects := 0
+	var n := kinds.size()
 	for i in n:
 		if not t.alive or t.hp <= 0:
 			break
-		var r := await qte.prompt(t.center() + Vector2(0, -150), keys[i], 0.62 if i == 0 else 0.5)
-		if r != "miss":
-			Voice.bark(h.id, "hit")
+		var r := await qte.prompt(t.center() + Vector2(0, -150), kinds[i], 0.62 if i == 0 else 0.5)
 		var kick := i % 2 == 1
 		h.set_pose("kick" if kick else "attack")
-		var tw := h.create_tween()
-		tw.tween_property(h, "global_position", dest + Vector2(36, -18 if kick else 0), 0.06)
-		tw.tween_property(h, "global_position", dest, 0.12)
+		_strike_motion(h, dest, kick)
 		if r == "miss":
 			Fx.pop_text(world, t.top() + Vector2(0, -20), "MISS", Color("ff6a6a"), 44, 0.4)
 			Sfx.play("sfx_miss", -4.0)
 			await wait(0.2)
 			break
+		Voice.bark(h.id, "hit")
 		var q := 1.3 if r == "perfect" else 1.0
 		if r == "perfect":
 			perfects += 1
@@ -555,24 +579,60 @@ func _combo(h: Battler, t: Battler, n: int, mult: float, big_finish: bool) -> in
 			add_meter(7)
 		else:
 			add_meter(3)
-		var dmg := int(round(_power(h) * mult * q * randf_range(0.92, 1.08)))
-		var last := i == n - 1
-		_impact(t.center() + Vector2(-20, -10 if kick else -40), kick)
-		await _hit_enemy(t, dmg, r == "perfect" or (last and big_finish), "PERFECT" if r == "perfect" else "")
+		_impact(t.center() + Vector2(-20, -10 if kick else -40), kick, elem)
+		await _hit_enemy(t, _calc(h, mult * q), r == "perfect" or (i == n - 1 and big_finish), "PERFECT" if r == "perfect" else "", elem)
 	await wait(0.2)
 	h.set_pose("idle")
+	cam_reset()
 	await h.go_home()
 	return perfects
 
 
-func _impact(p: Vector2, kick: bool) -> void:
-	Fx.ring(world, p, Color.WHITE, 110 if kick else 90, 0.22)
+## Gerak maju-mundur kecil yang halus di setiap pukulan.
+func _strike_motion(h: Battler, dest: Vector2, kick: bool) -> void:
+	var tw := h.create_tween()
+	tw.tween_property(h, "global_position", dest + Vector2(42, -24 if kick else -4), 0.07).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(h, "global_position", dest, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	var s := h.sprite.scale
+	var tw2 := h.create_tween()
+	tw2.tween_property(h.sprite, "scale", Vector2(s.x * 1.1, s.y * 0.92), 0.06)
+	tw2.tween_property(h.sprite, "scale", s, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _calc(h: Battler, mult: float) -> int:
+	return int(round(_power(h) * mult * randf_range(0.92, 1.08)))
+
+
+func _elem_mult(t: Battler, elem: String) -> float:
+	if elem == "":
+		return 1.0
+	if elem == t.data.get("weak", ""):
+		return 1.5
+	if elem == t.data.get("resist", ""):
+		return 0.6
+	return 1.0
+
+
+func _elem_color(elem: String) -> Color:
+	match elem:
+		"api":
+			return Color("ff7a2a")
+		"listrik":
+			return Color("5ae0ff")
+		"kertas":
+			return Color("f6efe1")
+	return Color(1, 0.95, 0.7)
+
+
+func _impact(p: Vector2, kick: bool, elem := "fisik") -> void:
+	var col := _elem_color(elem)
+	Fx.ring(world, p, col, 110 if kick else 90, 0.22)
 	var l := Line2D.new()
 	var a := -0.6 if kick else 0.2
 	var dir := Vector2(cos(a), sin(a))
 	l.points = PackedVector2Array([p - dir * 80, p + dir * 80])
 	l.width = 22
-	l.default_color = Color(1, 0.95, 0.7)
+	l.default_color = col
 	var c := Curve.new()
 	c.add_point(Vector2(0, 0.1))
 	c.add_point(Vector2(0.5, 1))
@@ -583,17 +643,52 @@ func _impact(p: Vector2, kick: bool) -> void:
 	var tw := l.create_tween()
 	tw.tween_property(l, "modulate:a", 0.0, 0.2)
 	tw.tween_callback(l.queue_free)
+	match elem:
+		"api":
+			var f := Fx.burst(world, p, "glow", 16, 0.9)
+			f.color = Color(1.0, 0.5, 0.15, 0.9)
+			Sfx.play("sfx_hit_big", -6.0, 0.7)
+		"listrik":
+			_lightning(p)
+			Sfx.play("sfx_tick", -2.0, 2.2)
+		"kertas":
+			Fx.burst(world, p, "paper", 14, 0.9)
 	Sfx.play("sfx_paper", -4.0, 1.6, 0.1)
 
 
-func _hit_enemy(t: Battler, dmg: int, big: bool, tag := "") -> void:
-	dmg = maxi(1, dmg)
+func _lightning(p: Vector2) -> void:
+	for k in 2:
+		var l := Line2D.new()
+		var pts := PackedVector2Array()
+		var start := p + Vector2(randf_range(-70, 70), -190)
+		for i in 7:
+			var v := start.lerp(p, i / 6.0)
+			if i > 0 and i < 6:
+				v += Vector2(randf_range(-22, 22), 0)
+			pts.append(v)
+		l.points = pts
+		l.width = 6
+		l.default_color = Color("aef4ff")
+		l.z_index = 56
+		world.add_child(l)
+		var tw := l.create_tween()
+		tw.tween_property(l, "modulate:a", 0.0, 0.25)
+		tw.tween_callback(l.queue_free)
+
+
+func _hit_enemy(t: Battler, dmg: int, big: bool, tag := "", elem := "") -> void:
+	var m := _elem_mult(t, elem)
+	dmg = maxi(1, int(round(dmg * m)))
 	t.take_damage(dmg)
 	t.hurt(big)
 	Fx.damage_star(world, t.center() + Vector2(randf_range(20, 70), randf_range(-70, -20)), dmg)
 	Fx.burst(world, t.center(), "paper", 10 + mini(dmg, 20))
 	Sfx.play("sfx_hit_big" if big else "sfx_hit", 0.0, 1.0, 0.1)
 	shake(0.32 if big else 0.16)
+	if m > 1.0:
+		Fx.pop_text(world, t.top() + Vector2(0, -60), Game.L("LEMAH!", "WEAK!"), Color("ffcf30"), 46, 0.4)
+	elif m < 1.0:
+		Fx.pop_text(world, t.top() + Vector2(0, -60), Game.L("TAHAN", "RESIST"), Color("b0b0c0"), 40, 0.4)
 	if tag != "":
 		Fx.pop_text(world, t.top() + Vector2(0, -10), tag, Color("7dff8a"), 40, 0.35)
 	if big:
@@ -604,59 +699,61 @@ func _hit_enemy(t: Battler, dmg: int, big: bool, tag := "") -> void:
 
 
 func _skill(h: Battler, sk: Dictionary, target: Variant) -> void:
-	match sk.id:
-		"tinju":
-			Voice.bark(h.id, "skill")
-			await Fx.cut_in(cutin_layer, h.tex_attack, Game.T(sk.name).to_upper() + "!", Game.ORANGE)
-			var p := await _combo(h, target, sk.keys, sk.power, true)
-			if p == sk.keys:
+	var elem: String = sk.get("elem", "fisik")
+	var kinds: Array = sk.get("kinds", [])
+	var col: Color = h.data.color if elem == "fisik" else _elem_color(elem)
+	if sk.type in ["combo", "aoe", "random"]:
+		Voice.bark(h.id, "skill")
+		await Fx.cut_in(cutin_layer, h.tex_attack, Game.T(sk.name).to_upper() + "!", col)
+	match sk.type:
+		"combo":
+			var t: Battler = target
+			var mult: float = sk.power
+			if sk.get("bonus_stun", false) and t.get_meta("stun", false):
+				mult *= 2.0
+				Fx.pop_text(world, t.top() + Vector2(0, -80), Game.L("KRITIS!", "CRITICAL!"), Color("ff5a5a"), 54, 0.5)
+			var p := await _combo(h, t, kinds, mult, true, elem)
+			if p == kinds.size():
 				Fx.pop_text(world, Vector2(640, 260), Game.L("COMBO SEMPURNA!", "PERFECT COMBO!"), Game.YELLOW, 70, 0.6)
-				add_ap(h.id, 1)
-		"sapuan":
-			Voice.bark(h.id, "skill")
-			await Fx.cut_in(cutin_layer, h.tex_attack, Game.T(sk.name).to_upper() + "!", Game.TEAL)
-			var p := await _combo(h, target, sk.keys, sk.power, true)
-			if p == sk.keys and target.alive:
-				target.set_meta("stun", true)
-				Fx.pop_text(world, target.top() + Vector2(0, -40), Game.L("PUSING!", "DIZZY!"), Color("ffd23f"), 56)
-				Fx.burst(world, target.top(), "stars", 12, 0.5)
-		"putar", "badai":
-			var name := Game.T(sk.name).to_upper() + "!"
-			Voice.bark(h.id, "skill")
-			await Fx.cut_in(cutin_layer, h.tex_attack, name, h.data.color)
-			await h.dash_to(Vector2(620, h.home.y), 0.3)
-			var keys := _rand_keys(sk.keys)
-			var total := 0.0
-			for i in sk.keys:
-				var r := await qte.prompt(Vector2(640, 300), keys[i], 0.55)
-				h.set_pose("kick" if i % 2 == 1 else "attack")
-				if r == "miss":
-					Fx.pop_text(world, Vector2(640, 380), "MISS", Color("ff6a6a"), 44, 0.4)
-					break
-				total += 1.3 if r == "perfect" else 1.0
-				if r == "perfect":
-					add_meter(5)
-				Fx.ring(world, h.center(), Color.WHITE, 200, 0.25)
-				Sfx.play("sfx_paper", 0.0, 1.2 + i * 0.1)
-			if total > 0:
-				Fx.speed_lines(world, Vector2(900, 480), 0.5)
-				for e in _alive(enemies):
-					var dmg := int(round(_power(h) * sk.power * total))
-					Fx.burst(world, e.center(), "paper" if sk.id == "badai" else "stars", 20)
-					await _hit_enemy(e, dmg, true)
-			h.set_pose("idle")
-			await h.go_home()
-		"semangat":
+				if sk.id == "tinju":
+					add_ap(h.id, 1)
+				if sk.get("stun", false) and t.alive:
+					t.set_meta("stun", true)
+					Fx.pop_text(world, t.top() + Vector2(0, -40), Game.L("PUSING!", "DIZZY!"), Color("ffd23f"), 56)
+					Fx.burst(world, t.top(), "stars", 12, 0.5)
+			if sk.get("debuff", false) and t.alive and p > 0:
+				t.set_meta("atk_down", 3)
+				t.flash(Color("b27ae8"), 0.5, 0.6)
+				Fx.pop_text(world, t.top() + Vector2(0, -40), Game.L("DITOLAK! ATK -30%", "REJECTED! ATK -30%"), Color("e06080"), 46)
+				Sfx.play("sfx_debuff")
+		"aoe":
+			await _aoe(h, sk, kinds, elem)
+		"random":
+			await _random_hits(h, sk, kinds, elem)
+		"heal":
 			var t: Battler = target
 			h.set_pose("attack")
 			var bonus := 0
-			for k in _rand_keys(sk.keys):
+			for k in kinds:
 				var r := await qte.prompt(t.center() + Vector2(0, -150), k, 0.6)
 				if r != "miss":
 					bonus += 1
-			await _heal_unit(t, int(t.max_hp * (0.3 + 0.1 * bonus)))
+			await _heal_unit(t, int(t.max_hp * (sk.power + 0.1 * bonus)))
 			h.set_pose("idle")
-		"teriak":
+		"heal_all":
+			h.set_pose("attack")
+			var bonus2 := 0
+			for k in kinds:
+				var r := await qte.prompt(h.top() + Vector2(0, -100), k, 0.6)
+				if r != "miss":
+					bonus2 += 1
+			for x in heroes:
+				x.atk_down = 0
+				x.refresh_status_icons()
+				_heal_unit(x, int(x.max_hp * (sk.power + 0.1 * bonus2)))
+			await wait(0.7)
+			h.set_pose("idle")
+		"buff":
 			h.set_pose("attack")
 			atk_buff = 2
 			Sfx.play("sfx_buff")
@@ -668,6 +765,68 @@ func _skill(h: Battler, sk: Dictionary, target: Variant) -> void:
 			menu.say(Game.L("ATK party +30% selama 2 giliran!", "Party ATK +30% for 2 turns!"))
 			await wait(1.0)
 			h.set_pose("idle")
+		"self":
+			h.set_pose("attack")
+			Sfx.play("sfx_heal")
+			await _heal_unit(h, int(h.max_hp * 0.3))
+			for x in heroes:
+				if x != h and x.alive:
+					add_ap(x.id, 2)
+					Fx.pop_text(world, x.top() + Vector2(0, -30), "+2 AP", Game.YELLOW, 50)
+			await wait(0.5)
+			h.set_pose("idle")
+
+
+func _aoe(h: Battler, sk: Dictionary, kinds: Array, elem: String) -> void:
+	var spot := Vector2(620, h.home.y)
+	cam_focus(Vector2(820, 470), 1.06, 0.4)
+	await h.dash_to(spot, 0.32)
+	var total := 0.0
+	for i in kinds.size():
+		var r := await qte.prompt(Vector2(640, 300), kinds[i], 0.55)
+		h.set_pose("kick" if i % 2 == 1 else "attack")
+		_strike_motion(h, spot, i % 2 == 1)
+		if r == "miss":
+			Fx.pop_text(world, Vector2(640, 380), "MISS", Color("ff6a6a"), 44, 0.4)
+			break
+		total += 1.3 if r == "perfect" else 1.0
+		if r == "perfect":
+			add_meter(5)
+		Fx.ring(world, h.center(), _elem_color(elem), 200, 0.25)
+		Sfx.play("sfx_paper", 0.0, 1.2 + i * 0.1)
+	if total > 0:
+		Fx.speed_lines(world, Vector2(900, 480), 0.5, Color(_elem_color(elem), 0.85))
+		for e in _alive(enemies):
+			_impact(e.center(), true, elem)
+			await _hit_enemy(e, _calc(h, sk.power * total * 0.8), true, "", elem)
+			if sk.get("burn", false) and e.alive:
+				e.set_meta("burn", 2)
+				Fx.pop_text(world, e.top() + Vector2(0, -30), Game.L("TERBAKAR!", "BURNING!"), Color("ff7a2a"), 40, 0.4)
+	h.set_pose("idle")
+	cam_reset()
+	await h.go_home()
+
+
+func _random_hits(h: Battler, sk: Dictionary, kinds: Array, elem: String) -> void:
+	cam_focus(Vector2(900, 480), 1.08, 0.35)
+	for i in kinds.size():
+		var al := _alive(enemies)
+		if al.is_empty():
+			break
+		var t: Battler = al[randi() % al.size()]
+		var dest := t.global_position + Vector2(-150, -10)
+		h.dash_to(dest, 0.2)
+		var r := await qte.prompt(t.center() + Vector2(0, -150), kinds[i], 0.45)
+		h.set_pose("kick" if i % 2 == 0 else "attack")
+		if r == "miss":
+			Fx.pop_text(world, t.top(), "MISS", Color("ff6a6a"), 44, 0.4)
+			break
+		Voice.bark(h.id, "hit")
+		_impact(t.center(), true, elem)
+		await _hit_enemy(t, _calc(h, sk.power * (1.3 if r == "perfect" else 1.0)), r == "perfect", "", elem)
+	h.set_pose("idle")
+	cam_reset()
+	await h.go_home()
 
 
 func _ultimate() -> void:
@@ -678,6 +837,7 @@ func _ultimate() -> void:
 	Voice.bark("tara", "ult")
 	await Fx.cut_in(cutin_layer, t.tex_attack, Game.L("SHIFT TERAKHIR!", "LAST SHIFT!"), Game.TEAL, true)
 	var total := 0.0
+	cam_focus(Vector2(820, 460), 1.1, 0.4)
 	for i in 6:
 		var who: Battler = r if i % 2 == 0 else t
 		if not who.alive:
@@ -696,6 +856,7 @@ func _ultimate() -> void:
 		await _hit_enemy(e, dmg, true, "PAMUNGKAS")
 	for x in heroes:
 		x.set_pose("idle")
+	cam_reset()
 
 
 func _heal_unit(t: Battler, amt: int) -> void:
@@ -766,6 +927,40 @@ func _enemy_turn(e: Battler) -> void:
 		Fx.pop_text(world, e.top(), Game.L("pusing...", "dizzy..."), Color("ffd23f"), 40, 0.5)
 		await wait(0.7)
 		return
+	e.turn_count += 1
+	var burn: int = e.get_meta("burn", 0)
+	if burn > 0:
+		e.set_meta("burn", burn - 1)
+		var bd := maxi(1, int(e.max_hp * 0.07))
+		e.take_damage(bd)
+		e.flash(Color("ff7a2a"), 0.4, 0.6)
+		Fx.burst(world, e.center(), "glow", 10, 0.6).color = Color(1, 0.5, 0.1, 0.9)
+		Fx.damage_star(world, e.center() + Vector2(40, -40), bd)
+		await wait(0.5)
+		if e.hp <= 0:
+			return
+	var flee: int = e.data.get("flee", 0)
+	if flee > 0 and e.turn_count >= flee:
+		Fx.pop_text(world, e.top(), Game.L("KABUR!", "FLED!"), Game.YELLOW, 56, 0.5)
+		Sfx.play("sfx_jump", 0.0, 0.8)
+		e.alive = false
+		e.set_meta("fled", true)
+		e.hpbar.visible = false
+		var ft := e.create_tween()
+		ft.tween_property(e, "position:x", 1500.0, 0.6).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		await ft.finished
+		e.visible = false
+		return
+	if e.data.get("heals", false) and randf() < 0.45:
+		var hurt_ally: Battler = null
+		for o in _alive(enemies):
+			if o.hp < o.max_hp * 0.7 and (hurt_ally == null or o.hp < hurt_ally.hp):
+				hurt_ally = o
+		if hurt_ally != null:
+			menu.say("%s: %s" % [e.display_name, Game.L("Rapat pemulihan!", "Recovery meeting!")])
+			await e.windup(0.3)
+			await _heal_unit(hurt_ally, int(hurt_ally.max_hp * 0.25))
+			return
 	var moves: Array = e.data.moves
 	var mv: Dictionary = moves[randi() % moves.size()]
 	if e.boss and randf() < 0.4:
@@ -783,7 +978,8 @@ func _enemy_turn(e: Battler) -> void:
 	var heavy: Array = mv.get("heavy", [])
 	await wait(0.35)
 	if not all_targets:
-		await e.dash_to(t.global_position + Vector2(210 if not e.boss else 250, -2), 0.3)
+		cam_focus(t.center(), 1.08, 0.35)
+		await e.dash_to(t.global_position + Vector2(210 if not e.boss else 250, -2), 0.34)
 	var parried := 0
 	var landed := 0
 	for i in hits.size():
@@ -816,7 +1012,8 @@ func _enemy_turn(e: Battler) -> void:
 		await wait(delay)
 		var res := qte.defend_result(hv)
 		e.sprite.scale = s
-		var dmg := int(round(float(e.atk) * float(mv.power) * randf_range(0.9, 1.1)))
+		var atkv := float(e.atk) * (0.7 if e.get_meta("atk_down", 0) > 0 else 1.0)
+		var dmg := int(round(atkv * float(mv.power) * randf_range(0.9, 1.1)))
 		await _resolve_hit(e, tgt, dmg, res)
 		if res == "parry":
 			parried += 1
@@ -826,8 +1023,9 @@ func _enemy_turn(e: Battler) -> void:
 	if parried > 0 and parried == landed and not all_targets and t.alive and e.alive:
 		await _counter(t, e)
 	await wait(0.2)
+	cam_reset()
 	if not all_targets and e.alive:
-		await e.jump_to(e.home, 0.35, 70, false)
+		await e.go_home(0.42)
 	e.idle_anim = e.alive
 
 
@@ -867,7 +1065,7 @@ func _resolve_hit(e: Battler, t: Battler, dmg: int, res: String) -> void:
 			shake(0.2 + d * 0.01)
 			hud.mood(t.id, "hurt")
 			Voice.bark(t.id, "hurt")
-			if e.id == "revisi" and randf() < 0.35 and t.atk_down == 0:
+			if randf() < float(e.data.get("panic", 0.35 if e.id == "revisi" else 0.0)) and t.atk_down == 0:
 				t.atk_down = 2
 				t.refresh_status_icons()
 				Fx.pop_text(world, t.top() + Vector2(0, -100), Game.L("PANIK! ATK turun", "PANIC! ATK down"), Color("b27ae8"), 40)
@@ -887,6 +1085,7 @@ func _counter(h: Battler, e: Battler) -> void:
 	await get_tree().create_timer(0.25, true, false, true).timeout
 	Engine.time_scale = 1.0
 	h.set_pose("kick")
+	cam_focus(e.center(), 1.15, 0.15)
 	var from := h.global_position
 	var tw := h.create_tween()
 	tw.tween_property(h, "global_position", e.global_position + Vector2(-150, 0), 0.1)
@@ -897,6 +1096,7 @@ func _counter(h: Battler, e: Battler) -> void:
 	tw2.tween_property(h, "global_position", from, 0.2)
 	await tw2.finished
 	h.set_pose("idle")
+	cam_reset()
 	add_meter(10)
 
 
@@ -910,10 +1110,12 @@ func _victory() -> String:
 	Sfx.play("jingle_victory", 2.0)
 	var exp := 0
 	var cash := 0
-	for g in group:
-		var d := Game.enemy_data(g)
-		exp += int(d.exp)
-		cash += int(d.money)
+	for e in enemies:
+		if e.get_meta("fled", false):
+			continue
+		exp += int(e.data.exp)
+		cash += int(e.data.money)
+		Game.add_kill(e.data.get("variant", e.id))
 	Game.money += cash
 	Game.stats.battles += 1
 	var ups := Game.gain_exp(exp)

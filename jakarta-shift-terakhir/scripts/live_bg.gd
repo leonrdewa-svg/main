@@ -22,21 +22,42 @@ static func style_for(path: String) -> String:
 	return "day"
 
 
-func setup(path: String, style := "", extra_scale := 1.0) -> void:
+var width := 1280.0
+var panels := 1
+
+
+## panels > 1: panorama (gambar, cermin, gambar, ...) yang menyambung mulus.
+func setup(path: String, style := "", extra_scale := 1.0, p_panels := 1) -> void:
 	if style == "":
 		style = style_for(path)
-	sprite = Sprite2D.new()
-	sprite.texture = load(path)
-	sprite.position = Vector2(640, 360)
-	_base_scale = maxf(1280.0 / sprite.texture.get_width(), 720.0 / sprite.texture.get_height()) * extra_scale * (1.0 + zoom_extra)
-	sprite.scale = Vector2.ONE * _base_scale
+	panels = p_panels
+	var tex: Texture2D = load(path)
 	var m := ShaderMaterial.new()
 	m.shader = SHADER
 	m.set_shader_parameter("sway", 0.0035)
 	m.set_shader_parameter("neon", 1.0 if style in ["night", "rain"] else 0.0)
 	m.set_shader_parameter("warm", 1.0 if style in ["sunset", "day"] else 0.35)
-	sprite.material = m
-	add_child(sprite)
+	if panels <= 1:
+		sprite = Sprite2D.new()
+		sprite.texture = tex
+		sprite.position = Vector2(640, 360)
+		_base_scale = maxf(1280.0 / tex.get_width(), 720.0 / tex.get_height()) * extra_scale * (1.0 + zoom_extra)
+		sprite.scale = Vector2.ONE * _base_scale
+		sprite.material = m
+		add_child(sprite)
+	else:
+		var sc := 720.0 / tex.get_height()
+		var pw := tex.get_width() * sc
+		width = pw * panels
+		for i in panels:
+			var p := Sprite2D.new()
+			p.texture = tex
+			p.centered = false
+			p.scale = Vector2(sc, sc)
+			p.flip_h = i % 2 == 1
+			p.position = Vector2(pw * i, 0)
+			p.material = m
+			add_child(p)
 	match style:
 		"sunset":
 			_motes(Color(1.0, 0.8, 0.5, 0.7), 26, Vector2(0, -12))
@@ -74,12 +95,12 @@ func _dot_tex(w: int, h: int) -> ImageTexture:
 
 func _base_particles(amount: int, life: float) -> CPUParticles2D:
 	var p := CPUParticles2D.new()
-	p.amount = amount
+	p.amount = int(amount * maxf(1.0, width / 1280.0))
 	p.lifetime = life
 	p.preprocess = life
 	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	p.emission_rect_extents = Vector2(700, 380)
-	p.position = Vector2(640, 360)
+	p.emission_rect_extents = Vector2(width / 2.0 + 60, 380)
+	p.position = Vector2(width / 2.0, 360)
 	p.gravity = Vector2.ZERO
 	p.z_index = 1
 	add_child(p)
@@ -111,8 +132,8 @@ func _leaves() -> void:
 		img.set_pixel(x, 0, Color(0, 0, 0, 0))
 		img.set_pixel(x, 5, Color(0, 0, 0, 0))
 	p.texture = ImageTexture.create_from_image(img)
-	p.emission_rect_extents = Vector2(700, 20)
-	p.position = Vector2(640, -20)
+	p.emission_rect_extents = Vector2(width / 2.0 + 60, 20)
+	p.position = Vector2(width / 2.0, -20)
 	p.direction = Vector2(1, 1)
 	p.spread = 30
 	p.initial_velocity_min = 30
@@ -133,8 +154,8 @@ func _rain() -> void:
 		img.set_pixel(0, y, Color(0.8, 0.9, 1.0, y / 26.0 * 0.7))
 		img.set_pixel(1, y, Color(0.8, 0.9, 1.0, y / 26.0 * 0.4))
 	p.texture = ImageTexture.create_from_image(img)
-	p.emission_rect_extents = Vector2(760, 10)
-	p.position = Vector2(560, -30)
+	p.emission_rect_extents = Vector2(width / 2.0 + 120, 10)
+	p.position = Vector2(width / 2.0 - 80, -30)
 	p.direction = Vector2(0.18, 1)
 	p.spread = 2
 	p.initial_velocity_min = 900
@@ -145,8 +166,8 @@ func _rain() -> void:
 	# cipratan di tanah
 	var s := _base_particles(40, 0.35)
 	s.texture = _dot_tex(8, 8)
-	s.emission_rect_extents = Vector2(680, 90)
-	s.position = Vector2(640, 620)
+	s.emission_rect_extents = Vector2(width / 2.0, 90)
+	s.position = Vector2(width / 2.0, 620)
 	s.preprocess = 0
 	s.direction = Vector2(0, -1)
 	s.spread = 60
@@ -159,16 +180,17 @@ func _rain() -> void:
 
 ## Kabut/awan lembut yang lewat pelan.
 func _mist(col: Color) -> void:
-	for i in 3:
+	for i in 3 * panels:
 		var m := Sprite2D.new()
 		m.texture = Fx.GLOW_TEX
 		m.modulate = col
 		m.scale = Vector2(9, 2.2)
-		m.position = Vector2(randf_range(0, 1280), randf_range(80, 300))
+		m.position = Vector2(randf_range(0, width), randf_range(80, 300))
 		m.z_index = 1
 		add_child(m)
 		var tw := m.create_tween().set_loops()
 		var dur := randf_range(40, 70)
-		tw.tween_property(m, "position:x", 1700.0, dur * (1700.0 - m.position.x) / 2100.0)
+		var span := width + 800.0
+		tw.tween_property(m, "position:x", width + 400.0, dur * (width + 400.0 - m.position.x) / span)
 		tw.tween_property(m, "position:x", -400.0, 0.0)
-		tw.tween_property(m, "position:x", m.position.x, dur * (m.position.x + 400.0) / 2100.0)
+		tw.tween_property(m, "position:x", m.position.x, dur * (m.position.x + 400.0) / span)

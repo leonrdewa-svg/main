@@ -23,7 +23,7 @@ func _ready() -> void:
 	add_child(bg)
 	var shade := ColorRect.new()
 	shade.size = Vector2(1280, 720)
-	shade.color = Color(0.08, 0.03, 0.08, 0.35)
+	shade.color = Color(0.08, 0.03, 0.08, 0.18)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(shade)
 

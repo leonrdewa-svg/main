@@ -5,6 +5,12 @@ uniform float sway = 0.004;
 uniform float neon = 0.0;
 uniform float warm = 0.0;
 
+varying vec4 vmod;
+
+void vertex() {
+	vmod = COLOR;
+}
+
 void fragment() {
 	vec2 uv = UV;
 	vec4 base = texture(TEXTURE, uv);
@@ -18,6 +24,6 @@ void fragment() {
 	float flick = 0.5 + 0.5 * sin(TIME * 3.1 + uv.x * 23.0) * sin(TIME * 7.7 + uv.y * 11.0);
 	c.rgb += c.rgb * sat * neon * flick * step(0.55, mx) * 0.7;
 	float sweep = smoothstep(0.06, 0.0, abs(fract(uv.x * 0.6 + uv.y * 0.25 - TIME * 0.035) - 0.5)) * warm;
-	c.rgb += vec3(1.0, 0.82, 0.55) * sweep * 0.10;
-	COLOR = c * COLOR;
+	c.rgb += vec3(1.0, 0.85, 0.6) * sweep * 0.07;
+	COLOR = c * vmod;
 }

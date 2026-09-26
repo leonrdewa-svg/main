@@ -39,6 +39,9 @@ var hpbar: Node2D
 var _mv_from := Vector2.ZERO
 var _mv_to := Vector2.ZERO
 var _mv_h := 0.0
+var _lean := 0.0
+var trail := false
+var _trail_t := 0.0
 
 
 func setup(p_id: String, p_data: Dictionary, p_is_hero: bool) -> void:
@@ -130,8 +133,15 @@ func _process(delta: float) -> void:
 		sprite.rotation = 0.0
 		drop.scale = sprite.scale
 		drop.skew = sprite.skew
+	if idle_anim and alive and not is_hero:
+		sprite.position.y = sin(_t * 2.1) * 5.0
 	if charging:
 		sprite.position.x = randf_range(-2, 2)
+	if trail:
+		_trail_t -= delta
+		if _trail_t <= 0.0:
+			_trail_t = 0.03
+			_ghost()
 	status_root.position = Vector2(0, -height() - 26)
 
 
@@ -217,25 +227,29 @@ func jump_to(pos: Vector2, dur := 0.5, h := 160.0, sound := true) -> void:
 
 
 ## Lari cepat (hop kecil) ke posisi.
+## Meluncur halus (easing) ke posisi, dengan bayangan jejak (afterimage).
 func dash_to(pos: Vector2, dur := 0.35) -> void:
 	idle_anim = false
-	var from := global_position
-	var tw := create_tween()
-	_mv_from = from
+	_mv_from = global_position
 	_mv_to = pos
-	tw.tween_method(_dash_step, 0.0, 1.0, dur)
+	_lean = clampf((pos.x - global_position.x) / 600.0, -1.0, 1.0)
+	trail = true
+	var tw := create_tween()
+	tw.tween_method(_dash_step, 0.0, 1.0, dur).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	await tw.finished
-	sprite.rotation = 0.0
+	trail = false
+	var tw2 := create_tween()
+	tw2.tween_property(sprite, "rotation", 0.0, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
-func go_home(dur := 0.4) -> void:
+func go_home(dur := 0.42) -> void:
 	if global_position.distance_to(home) < 4:
 		set_pose("idle")
-		idle_anim = true
+		idle_anim = alive
 		return
-	await jump_to(home, dur, 90.0, false)
+	await dash_to(home, dur)
 	set_pose("idle")
-	idle_anim = true
+	idle_anim = alive
 
 
 ## Maju sedikit ke arah target (serangan musuh).
@@ -315,6 +329,25 @@ func knock_out() -> void:
 	visible = false
 
 
+## Bayangan jejak saat bergerak cepat.
+func _ghost() -> void:
+	if not is_inside_tree() or sprite.texture == null:
+		return
+	var g := Sprite2D.new()
+	g.texture = sprite.texture
+	g.offset = sprite.offset
+	g.flip_h = sprite.flip_h
+	g.global_position = sprite.global_position
+	g.rotation = sprite.rotation
+	g.scale = sprite.scale * scale
+	g.modulate = Color(data.get("color", Color.WHITE), 0.45)
+	g.z_index = -1
+	get_parent().add_child(g)
+	var tw := g.create_tween()
+	tw.tween_property(g, "modulate:a", 0.0, 0.22)
+	tw.tween_callback(g.queue_free)
+
+
 func _jump_step(v: float) -> void:
 	var arc := sin(v * PI)
 	global_position = _mv_from.lerp(_mv_to, v) + Vector2(0, -arc * _mv_h)
@@ -323,8 +356,8 @@ func _jump_step(v: float) -> void:
 
 
 func _dash_step(v: float) -> void:
-	global_position = _mv_from.lerp(_mv_to, v) + Vector2(0, -abs(sin(v * PI * 3)) * 16)
-	sprite.rotation = sin(v * PI * 6) * 0.06
+	global_position = _mv_from.lerp(_mv_to, v) + Vector2(0, -sin(v * PI) * 14)
+	sprite.rotation = _lean * 0.16 * sin(v * PI)
 
 
 func _resume_idle() -> void:

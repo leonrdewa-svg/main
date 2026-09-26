@@ -16,14 +16,21 @@ Godot **4.5+** (dites 4.7) → Import `project.godot` → **F5**. Progres tersim
 
 ## Isi
 
-- **5 area**: Dukuh Atas, Monas, Kota Tua, Blok M, SCBD. Pindah area lewat **papan MRT** (peta), istirahat & simpan di sana.
+- **5 area panorama** (2–3 layar, kamera mengikuti pemain): Dukuh Atas, Monas, Kota Tua, Blok M, SCBD.
+  Pindah area lewat **papan MRT** (peta), istirahat & simpan di sana.
+- **16 NPC + 6 misi sampingan** (tanda ! kuning), **14 harta tersembunyi** (kilau bintang), 32 grup musuh + 4 bos.
+  Bos tiap area muncul setelah cukup pekerja dibebaskan.
 - **Musuh berkeliaran**: sentuh = diserang duluan; tekan Z dari dekat = **Serangan Pertama** (musuh -15% HP).
 - **Battle gaya Expedition 33**
   - Timeline giliran berdasar SPD.
   - Serang = combo pukulan & tendangan, semua pakai Z: TEKAN pas, TAHAN lalu lepas di hijau, atau TEKAN TERUS. PERFECT = damage lebih besar.
   - Musuh menyerang dengan ritme berbeda-beda. Lingkaran yang menyusut ke hero = waktu kena: **PARRY** (Z) atau **DODGE** (X).
     Lingkaran merah = tidak bisa di-parry. Parry semua hit = **COUNTER**.
-  - **AP** untuk jurus (Tinju Komuter, Tendangan Putar, Sapuan Kaki, Badai Dokumen, dll).
+  - **16 jurus** (8 per hero, terbuka tiap naik level) dengan **elemen** API / LISTRIK / KERTAS.
+    Tiap musuh punya kelemahan (LEMAH! x1.5) dan ketahanan. Efek: pusing, ATK turun, terbakar, heal party.
+  - **11 jenis musuh**: Deadline, Notifikasi, Deadline Mendesak, Revisi, Revisi Beku, Rapat Zoom,
+    Target, Target Emas (bisa kabur), KPI Merah, Lembur, Lembur Bayangan.
+  - Gerakan halus (easing + bayangan jejak) dan kamera sinematik yang zoom ke aksi.
   - Meter **SEMANGAT** penuh = **Pamungkas** duo.
 - **Level & EXP**, uang Rupiah, **Warung Bu Sari** (beli nasi bungkus, kopi susu, dll).
 - **4 bos** + fase 2 bos terakhir. Pekerja yang dikalahkan kembali normal dan bisa diajak bicara.

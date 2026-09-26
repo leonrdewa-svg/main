@@ -29,13 +29,18 @@ var _grace := 1.2
 var _click_target := Vector2.INF
 var _click_interact: Variant = null
 var _auto_t := 0.0
+var world_w := 1280.0
+var cam: Camera2D
+var chests: Array = []    # {node, def, pos}
+var toast_l: Label
 
 
 func _ready() -> void:
 	A = Story.AREAS[area_id]
 	var bg := LiveBg.new()
 	add_child(bg)
-	bg.setup(A.bg)
+	bg.setup(A.bg, "", 1.0, A.get("panels", 1))
+	world_w = bg.width
 	actors = Node2D.new()
 	actors.y_sort_enabled = true
 	add_child(actors)
@@ -53,8 +58,14 @@ func _ready() -> void:
 		_mark("gate", A.gate, Game.L("GERBANG MENARA (%d/3)", "TOWER GATE (%d/3)") % Game.cards(), Color("8a1a32"))
 
 	for n in A.npcs:
-		_add_npc(n.sprite, n.pos, {"talk": n.talk, "who": n.who})
+		_add_npc(n.sprite, n.pos, n)
+	for t in A.get("treasures", []):
+		if not Game.flag("chest_" + t.id):
+			_add_chest(t)
+	var boss_ready: bool = Game.area_defeated(area_id) >= int(A.get("boss_after", 0))
 	for e in A.enemies:
+		if e.get("boss", false) and not boss_ready and not Game.flag("def_" + e.id):
+			continue
 		if Game.flag("def_" + e.id):
 			var kind: String = Game.enemy_data(e.group[0]).kind
 			var spr: String = "res://assets/world/%s.png" % Game.ENEMIES[kind].npc
@@ -81,6 +92,17 @@ func _ready() -> void:
 	tara.position = player.position + Vector2(-70, -6)
 	for i in 14:
 		trail.append(tara.position)
+
+	cam = Camera2D.new()
+	cam.limit_left = 0
+	cam.limit_right = int(world_w)
+	cam.limit_top = 0
+	cam.limit_bottom = 720
+	cam.position_smoothing_enabled = true
+	cam.position_smoothing_speed = 6.0
+	cam.position = Vector2(clampf(player.position.x, 640, world_w - 640), 360)
+	add_child(cam)
+	cam.make_current()
 
 	_build_ui()
 	if Game.touch_mode:
@@ -121,12 +143,92 @@ func _add_npc(path: String, pos: Vector2, info: Dictionary) -> void:
 	s.texture = load(path)
 	s.offset = Vector2(0, -s.texture.get_height() / 2.0)
 	s.position = pos
-	s.scale = Vector2.ONE * (170.0 / s.texture.get_height())
+	s.scale = Vector2.ONE * (170.0 / s.texture.get_height()) * float(info.get("scale", 1.0))
+	if info.has("tint"):
+		s.self_modulate = info.tint
+	s.flip_h = info.get("flip", false)
 	actors.add_child(s)
+	if info.has("quest") and Game.flags.get("q_" + info.quest.id, 0) != 2:
+		var mk := Fx.label("!", 54, Game.YELLOW, 12)
+		mk.size = Vector2(60, 70)
+		mk.scale = Vector2.ONE / s.scale
+		s.add_child(mk)
+		mk.position = Vector2(-30, -s.texture.get_height() - 70)
+		var mt := mk.create_tween().set_loops()
+		mt.tween_property(mk, "modulate:a", 0.4, 0.5)
+		mt.tween_property(mk, "modulate:a", 1.0, 0.5)
 	var tw := s.create_tween().set_loops()
 	tw.tween_property(s, "skew", 0.04, 1.3).set_trans(Tween.TRANS_SINE)
 	tw.tween_property(s, "skew", -0.04, 1.3).set_trans(Tween.TRANS_SINE)
 	npcs.append({"node": s, "info": info, "pos": pos})
+
+
+## Harta tersembunyi: kilau yang bisa diambil dengan Z.
+func _add_chest(t: Dictionary) -> void:
+	var n := Node2D.new()
+	n.position = t.pos
+	actors.add_child(n)
+	var g := Sprite2D.new()
+	g.texture = Fx.GLOW_TEX
+	g.modulate = Color(1, 0.9, 0.4, 0.8)
+	g.scale = Vector2(0.9, 0.9)
+	g.position = Vector2(0, -30)
+	n.add_child(g)
+	var st := Sprite2D.new()
+	st.texture = Fx.STAR_TEX
+	st.scale = Vector2(0.28, 0.28)
+	st.position = Vector2(0, -30)
+	n.add_child(st)
+	var tw := n.create_tween().set_loops()
+	tw.tween_property(st, "rotation", TAU, 2.4)
+	var tw2 := g.create_tween().set_loops()
+	tw2.tween_property(g, "scale", Vector2(1.2, 1.2), 0.6).set_trans(Tween.TRANS_SINE)
+	tw2.tween_property(g, "scale", Vector2(0.8, 0.8), 0.6).set_trans(Tween.TRANS_SINE)
+	chests.append({"node": n, "def": t, "pos": t.pos})
+
+
+func toast(text: String, col := Game.YELLOW) -> void:
+	toast_l.text = text
+	toast_l.label_settings.font_color = col
+	toast_l.modulate.a = 1.0
+	toast_l.scale = Vector2(0.6, 0.6)
+	var tw := toast_l.create_tween()
+	tw.tween_property(toast_l, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(2.0)
+	tw.tween_property(toast_l, "modulate:a", 0.0, 0.4)
+
+
+func _give_reward(r: Dictionary) -> void:
+	var parts := []
+	if r.has("money"):
+		Game.money += int(r.money)
+		parts.append("+" + Game.rp(int(r.money)))
+	if r.has("item"):
+		Game.add_item(r.item, int(r.get("count", 1)))
+		parts.append("+%d %s" % [int(r.get("count", 1)), Game.T(Game.ITEMS[r.item].name)])
+	if r.has("key"):
+		Game.set_flag("key_" + r.key)
+		parts.append(Game.L(Story.KEY_ITEMS[r.key][0], Story.KEY_ITEMS[r.key][1]))
+	Sfx.play("sfx_star")
+	Sfx.play("sfx_heal", -6.0, 1.3)
+	toast("  ".join(parts))
+	refresh_ui()
+
+
+func _quest_ready(q: Dictionary) -> bool:
+	match q.type:
+		"give":
+			return Game.bag.get(q.item, 0) >= int(q.n)
+		"fetch":
+			return Game.flag("key_" + q.key)
+		"bounty":
+			var c := 0
+			for k in q.kinds:
+				c += int(Game.stats.get("kill_" + k, 0))
+			return c >= int(q.n)
+		"gift":
+			return true
+	return false
 
 
 func _build_ui() -> void:
@@ -171,6 +273,12 @@ func _build_ui() -> void:
 	prompt_l.visible = false
 	add_child(prompt_l)
 	prompt_l.z_index = 90
+	toast_l = Fx.label("", 34, Game.YELLOW, 9)
+	toast_l.size = Vector2(1280, 50)
+	toast_l.position = Vector2(0, 110)
+	toast_l.pivot_offset = Vector2(640, 25)
+	toast_l.modulate.a = 0.0
+	ui.add_child(toast_l)
 	dialog = Dialogue.new()
 	var dl := CanvasLayer.new()
 	dl.layer = 40
@@ -184,7 +292,8 @@ func _build_ui() -> void:
 
 
 func refresh_ui() -> void:
-	obj_l.text = Game.L("Tujuan: ", "Goal: ") + Story.objective()
+	var hint := Story.boss_hint(area_id)
+	obj_l.text = Game.L("Tujuan: ", "Goal: ") + Story.objective() + ("   ·   " + hint if hint != "" else "")
 	var r: Dictionary = Game.party.raka
 	var t: Dictionary = Game.party.tara
 	money_l.text = Game.L("%s   Kartu %d/3\nRaka %d/%d  ·  Tara %d/%d", "%s   Cards %d/3\nRaka %d/%d  ·  Tara %d/%d") % [Game.rp(Game.money), Game.cards(), r.hp, r.max_hp, t.hp, t.max_hp]
@@ -223,7 +332,7 @@ func _process(delta: float) -> void:
 	if player.moving:
 		var mv := Vector2(v.x, v.y * 0.65) * SPEED * delta
 		player.position += mv
-		player.position.x = clampf(player.position.x, 40, 1240)
+		player.position.x = clampf(player.position.x, 40, world_w - 40)
 		player.position.y = clampf(player.position.y, A.floor[0], A.floor[1])
 		if absf(v.x) > absf(v.y):
 			player.face("right" if v.x > 0 else "left")
@@ -238,6 +347,7 @@ func _process(delta: float) -> void:
 			tara.position = p
 	else:
 		tara.moving = false
+	cam.position = Vector2(clampf(player.position.x, 640, world_w - 640), 360)
 	_update_prompt()
 	for r in roamers:
 		if is_instance_valid(r) and r.touching(player.position) and _grace <= 0.0:
@@ -258,6 +368,11 @@ func _nearest() -> Variant:
 		if d < bd + 20:
 			bd = d
 			best = {"type": m.kind, "ref": m}
+	for c in chests:
+		var d: float = (c.pos as Vector2).distance_to(player.position)
+		if d < bd + 10:
+			bd = d
+			best = {"type": "chest", "ref": c}
 	for r in roamers:
 		if is_instance_valid(r):
 			var d: float = r.position.distance_to(player.position)
@@ -273,7 +388,7 @@ func _update_prompt() -> void:
 		prompt_l.visible = false
 		return
 	prompt_l.visible = true
-	var txt := {"npc": Game.L("Z: BICARA", "Z: TALK"), "station": "Z: MRT", "shop": Game.L("Z: WARUNG", "Z: SHOP"), "gate": Game.L("Z: GERBANG", "Z: GATE"), "enemy": Game.L("Z: SERANG DULUAN!", "Z: STRIKE FIRST!")}
+	var txt := {"npc": Game.L("Z: BICARA", "Z: TALK"), "station": "Z: MRT", "shop": Game.L("Z: WARUNG", "Z: SHOP"), "gate": Game.L("Z: GERBANG", "Z: GATE"), "enemy": Game.L("Z: SERANG DULUAN!", "Z: STRIKE FIRST!"), "chest": Game.L("Z: AMBIL", "Z: PICK UP")}
 	prompt_l.text = txt.get(n.type, "Z")
 	prompt_l.label_settings.font_color = Color("ff6a6a") if n.type == "enemy" else Game.YELLOW
 	prompt_l.position = player.position + Vector2(-150, -230)
@@ -306,7 +421,7 @@ func _unhandled_input(e: InputEvent) -> void:
 		if _click_interact != null:
 			var ref = _click_interact.ref
 			target = (ref.position if ref is Node2D else ref.pos) + Vector2(-80, 0)
-		_click_target = Vector2(clampf(target.x, 40, 1240), clampf(target.y, A.floor[0], A.floor[1]))
+		_click_target = Vector2(clampf(target.x, 40, world_w - 40), clampf(target.y, A.floor[0], A.floor[1]))
 		if _click_interact != null and _click_target.distance_to(player.position) < TALK_DIST:
 			_click_target = Vector2.INF
 			var ci = _click_interact
@@ -321,8 +436,35 @@ func _interact(n: Dictionary) -> void:
 			if info.get("freed", false):
 				var fl: Array = Story.FREED[info.n]
 				await talk([["pekerja", "", fl[0], fl[1], fl[2]]], "freed_%d" % info.n)
+			elif info.has("quest"):
+				var q: Dictionary = info.quest
+				var st: int = Game.flags.get("q_" + q.id, 0)
+				if st == 2:
+					await talk(Story.D[q.after], q.after)
+				elif _quest_ready(q):
+					await talk(Story.D[q.done], q.done)
+					if q.type == "give":
+						for i in int(q.n):
+							Game.use_item(q.item)
+					Game.flags["q_" + q.id] = 2
+					_give_reward(q.reward)
+					for c in n.ref.node.get_children():
+						if c is Label:
+							c.queue_free()
+				else:
+					await talk(Story.D[q.ask], q.ask)
+					Game.flags["q_" + q.id] = 1
+					toast(Game.L("Misi baru: ", "New quest: ") + Game.L(q.desc[0], q.desc[1]), Color("7dd8ff"))
 			else:
 				await talk(Story.D[info.talk], info.talk)
+		"chest":
+			var c: Dictionary = n.ref
+			Game.set_flag("chest_" + c.def.id)
+			Game.stats.chests = int(Game.stats.get("chests", 0)) + 1
+			Fx.burst(self, c.pos + Vector2(0, -30), "stars", 14, 0.7)
+			c.node.queue_free()
+			chests.erase(c)
+			_give_reward(c.def.reward)
 		"station":
 			Game.pos = player.position
 			busy = true
@@ -371,6 +513,7 @@ func _pause_menu() -> void:
 	while true:
 		var c = await menu.open([
 			{"id": "bag", "label": Game.L("Tas", "Bag"), "icon": "res://assets/sprites/item_tas.png", "desc": Game.L("Pakai makanan & minuman.", "Use food & drinks."), "enabled": Game.bag_total() > 0},
+			{"id": "quests", "label": Game.L("Misi", "Quests"), "icon": "res://assets/ui/icon_heart.png", "desc": Game.L("Misi sampingan yang sedang aktif.", "Your active side quests.")},
 			{"id": "status", "label": "Status", "icon": "res://assets/ui/icon_star.png", "desc": Game.L("Level, HP, dan ATK party.", "Party level, HP and ATK.")},
 			{"id": "lang", "label": Game.L("Bahasa: Indonesia", "Language: English"), "icon": "res://assets/ui/icon_sp.png", "desc": Game.L("Ganti bahasa teks (suara tetap Jepang).", "Switch text language (voices stay Japanese).")},
 			{"id": "touch", "label": Game.L("Kontrol: Sentuh (HP)", "Controls: Touch (phone)") if Game.touch_mode else Game.L("Kontrol: PC (keyboard)", "Controls: PC (keyboard)"), "icon": "res://assets/ui/icon_heart.png", "desc": Game.L("Ganti mode kontrol. Sentuh = joystick & tombol di layar untuk HP.", "Switch controls. Touch = on-screen joystick & buttons for phones.")},
@@ -388,6 +531,18 @@ func _pause_menu() -> void:
 				Game.pos = player.position
 				event.emit("reload", {})
 				return
+			"quests":
+				var ql := []
+				for aid in Story.AREA_ORDER:
+					for npc in Story.AREAS[aid].npcs:
+						if npc.has("quest") and npc.quest.has("desc"):
+							var qs: int = Game.flags.get("q_" + npc.quest.id, 0)
+							if qs == 1:
+								ql.append(["narator", "", "• " + npc.quest.desc[0] + ("  (SIAP!)" if _quest_ready(npc.quest) else ""), "• " + npc.quest.desc[1] + ("  (READY!)" if _quest_ready(npc.quest) else "")])
+				if ql.is_empty():
+					ql.append(["narator", "", "Belum ada misi aktif. Cari NPC dengan tanda ! kuning.", "No active quests. Look for NPCs with a yellow !."])
+				menu.close()
+				await dialog.play(ql)
 			"lang":
 				Game.set_lang("en" if Game.lang == "id" else "id")
 				Sfx.play("sfx_confirm")
@@ -447,6 +602,7 @@ func _bag_menu() -> void:
 func _auto_dir(delta: float) -> Vector2:
 	_auto_t += delta
 	var goal := Vector2.INF
+	var gref: Variant = null
 	var best := 1e9
 	for r in roamers:
 		if is_instance_valid(r):
@@ -454,18 +610,24 @@ func _auto_dir(delta: float) -> Vector2:
 			if d < best:
 				best = d
 				goal = r.position
+				gref = {"type": "enemy", "ref": r}
+	if goal == Vector2.INF:
+		for c in chests:
+			goal = c.pos
+			gref = {"type": "chest", "ref": c}
+			break
 	if goal == Vector2.INF:
 		for m in marks:
 			if m.kind == ("gate" if Game.cards() >= 3 and A.has("gate") else "station"):
 				goal = m.pos
+				gref = {"type": m.kind, "ref": m}
 	if goal == Vector2.INF:
 		return Vector2.ZERO
 	var d2 := goal - player.position
-	if d2.length() < 90:
-		var n = _nearest()
-		if n != null and _auto_t > 0.5:
+	if d2.length() < 80:
+		if _auto_t > 0.5:
 			_auto_t = 0.0
-			_interact(n)
+			_interact(gref)
 		return Vector2.ZERO
 	return d2.normalized()
 
@@ -501,8 +663,10 @@ class Roamer extends Node2D:
 		sprite = Sprite2D.new()
 		sprite.texture = load(def.sprite)
 		sprite.offset = Vector2(0, -sprite.texture.get_height() / 2.0)
-		var h := 230.0 if boss else 175.0
+		var h := 230.0 if boss else (130.0 if def.get("small", false) else 175.0)
 		sprite.scale = Vector2.ONE * (h / sprite.texture.get_height())
+		if def.has("tint"):
+			sprite.self_modulate = def.tint
 		if boss:
 			sprite.self_modulate = Color(1.0, 0.8, 0.9)
 			var tag := Fx.label("BOS", 26, Game.PINK, 8)

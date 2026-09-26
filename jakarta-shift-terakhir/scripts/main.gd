@@ -107,6 +107,7 @@ func _battle(area: String, def: Dictionary, strike: String) -> void:
 	b.bg_path = Story.AREAS[area].bg
 	b.group = def.group
 	b.first_strike = strike
+	b.lvl = float(Story.AREAS[area].get("lvl", 1.0))
 	b.music = "bgm_boss" if def.get("boss", false) else "bgm_battle"
 	if def.get("boss", false):
 		b.title = Game.L("BOS: ", "BOSS: ") + Game.T(Game.enemy_data(def.group[0]).name).to_upper()
@@ -125,7 +126,7 @@ func _battle(area: String, def: Dictionary, strike: String) -> void:
 			await w.talk(Story.D[def.post], def.post)
 			Game.set_flag(def.card)
 			Sfx.play("sfx_star")
-		if area == "dukuh" and not Game.flag("prolog_done") and Game.flag("def_da_1") and Game.flag("def_da_2"):
+		if area == "dukuh" and not Game.flag("prolog_done") and Game.area_defeated("dukuh") >= 4:
 			await w.talk(Story.D.prolog_done, "prolog_done")
 			Game.set_flag("prolog_done")
 		w.refresh_ui()
@@ -192,6 +193,7 @@ func _battle_final() -> void:
 	var b := Battle.new()
 	b.bg_path = Story.AREAS.scbd.bg
 	b.group = ["lembur_abadi"]
+	b.lvl = 2.3
 	b.music = "bgm_boss"
 	b.title = Game.L("BOS TERAKHIR: LEMBUR ABADI", "FINAL BOSS: ETERNAL OVERTIME")
 	_swap(b)

@@ -11,7 +11,7 @@ var portrait: TextureRect
 var name_tag: Panel
 var name_l: Label
 var text_l: Label
-var arrow: Label
+var arrow: Polygon2D
 var _typing := false
 var _skip := false
 var _active := false
@@ -56,13 +56,20 @@ func _ready() -> void:
 	text_l.add_theme_font_size_override("font_size", 27)
 	text_l.add_theme_constant_override("line_spacing", 2)
 	panel.add_child(text_l)
-	arrow = Fx.label("▼", 26, Game.ORANGE, 6, Game.FONT_UI)
-	arrow.position = Vector2(930, 132)
-	arrow.size = Vector2(30, 30)
+	# Segitiga "lanjut" digambar (font tidak punya glyph ▼ di build web).
+	arrow = Polygon2D.new()
+	arrow.polygon = PackedVector2Array([Vector2(-12, -8), Vector2(12, -8), Vector2(0, 8)])
+	arrow.color = Game.ORANGE
+	var arrow_line := Line2D.new()
+	arrow_line.points = PackedVector2Array([Vector2(-12, -8), Vector2(12, -8), Vector2(0, 8), Vector2(-12, -8)])
+	arrow_line.width = 3
+	arrow_line.default_color = Game.INK
+	arrow.add_child(arrow_line)
+	arrow.position = Vector2(945, 146)
 	panel.add_child(arrow)
 	var tw := arrow.create_tween().set_loops()
-	tw.tween_property(arrow, "position:y", 124.0, 0.3)
-	tw.tween_property(arrow, "position:y", 132.0, 0.3)
+	tw.tween_property(arrow, "position:y", 138.0, 0.3)
+	tw.tween_property(arrow, "position:y", 146.0, 0.3)
 	visible = false
 
 

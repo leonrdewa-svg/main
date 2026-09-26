@@ -141,7 +141,7 @@ func show_frame(key: String, idx: int) -> void:
 		ox = -ox
 	sprite.offset = Vector2(ox, -t.get_height() / 2.0)
 	drop.offset = sprite.offset
-	var sc := height() / float(a0[2]) * 1.08
+	var sc := tex_idle.get_height() * base_scale / float(a0[2]) * 1.08
 	sprite.scale = Vector2(sc, sc)
 	sprite.rotation = 0.0
 	sprite.skew = 0.0
@@ -163,7 +163,7 @@ func end_frames() -> void:
 
 
 func height() -> float:
-	return tex_idle.get_height() * base_scale
+	return tex_idle.get_height() * base_scale * scale.y
 
 
 func top() -> Vector2:
@@ -192,7 +192,9 @@ func _process(delta: float) -> void:
 		if _trail_t <= 0.0:
 			_trail_t = 0.03
 			_ghost()
-	status_root.position = Vector2(0, -height() - 26)
+	status_root.position = Vector2(0, -tex_idle.get_height() * base_scale - 70)
+	if hpbar:
+		hpbar.position = Vector2(0, -tex_idle.get_height() * base_scale - 44)
 
 
 func set_pose(pose: String) -> void:

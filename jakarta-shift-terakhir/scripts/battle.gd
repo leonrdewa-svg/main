@@ -10,8 +10,8 @@ extends Node2D
 signal finished(result: String)
 signal _nav(kind: String, pos: Vector2)
 
-const HERO_POS := {"raka": Vector2(250, 628), "tara": Vector2(430, 640)}
-const MENU_POS := Vector2(540, 250)
+const HERO_POS := {"raka": Vector2(330, 610), "tara": Vector2(500, 540)}
+const MENU_POS := Vector2(60, 440)
 const KINDS := ["tap", "tap", "hold", "mash"]
 
 var bg_path := "res://assets/bg/dukuh_atas.jpg"
@@ -34,6 +34,7 @@ var enemies: Array = []
 var ap := {}
 var meter := 0.0
 var atk_buff := 0
+var turn_banner: Label
 var guard_turns := 0
 var round_no := 0
 var _trauma := 0.0
@@ -45,9 +46,9 @@ var _phase2_done := false
 func _ready() -> void:
 	world = Node2D.new()
 	add_child(world)
-	var bg := LiveBg.new()
+	var bg := Arena.new()
 	world.add_child(bg)
-	bg.setup(bg_path, "", 1.06)
+	bg.setup(bg_path)
 	var dim := ColorRect.new()
 	dim.size = Vector2(1400, 800)
 	dim.position = Vector2(-60, -40)
@@ -91,10 +92,8 @@ func _ready() -> void:
 		e.boss = d.get("boss", false)
 		if d.has("tint"):
 			e.sprite.self_modulate = d.tint
-		var x := 1050.0 if n == 1 else lerpf(880.0, 1130.0, float(i) / (n - 1))
-		if n == 3:
-			x = [850.0, 1010.0, 1170.0][i]
-		e.position = Vector2(x, 630 + (i % 2) * 12)
+		var slots := [[Vector2(960, 430)], [Vector2(830, 390), Vector2(1060, 470)], [Vector2(780, 360), Vector2(1110, 400), Vector2(930, 500)]]
+		e.position = slots[clampi(n, 1, 3) - 1][i]
 		e.home = e.position
 		enemies.append(e)
 
@@ -103,9 +102,14 @@ func _ready() -> void:
 	ui.add_child(hud)
 	menu = CommandMenu.new()
 	ui.add_child(menu)
-	menu.desc_panel.position = Vector2(232, 650)
-	menu.desc_panel.custom_minimum_size = Vector2(620, 56)
-	menu.desc_panel.size = Vector2(620, 56)
+	menu.desc_panel.position = Vector2(820, 612)
+	menu.desc_panel.custom_minimum_size = Vector2(440, 90)
+	menu.desc_panel.size = Vector2(440, 90)
+	turn_banner = Fx.label("", 40, Game.TEAL, 10)
+	turn_banner.size = Vector2(560, 60)
+	turn_banner.position = Vector2(360, 650)
+	turn_banner.visible = false
+	ui.add_child(turn_banner)
 	if Game.touch_mode:
 		var tc := TouchControls.new()
 		tc.mode = "battle"
@@ -120,6 +124,10 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	# skala kedalaman 2.5D: makin jauh (atas) makin kecil
+	for u in heroes + enemies:
+		if is_instance_valid(u):
+			u.scale = Vector2.ONE * Arena.depth_scale(u.position.y)
 	if _trauma > 0.0:
 		_trauma = maxf(0.0, _trauma - delta * 1.8)
 		var k := _trauma * _trauma * 26.0
@@ -297,6 +305,7 @@ func _hero_turn(h: Battler) -> void:
 	var spot := _turn_marker(h)
 	var act := await _choose(h)
 	spot.queue_free()
+	turn_banner.visible = false
 	menu.close()
 	_clear_arrows()
 	match act.kind:
@@ -387,13 +396,21 @@ func _choose(h: Battler) -> Dictionary:
 
 
 func _turn_marker(h: Battler) -> Node2D:
-	var n := Sprite2D.new()
-	n.texture = Fx.GLOW_TEX
-	n.modulate = Color(1, 0.9, 0.4, 0.7)
-	n.scale = Vector2(2.2, 0.5)
+	var n := Line2D.new()
+	var pts := PackedVector2Array()
+	var k := Arena.depth_scale(h.position.y)
+	for i in 41:
+		var a := TAU * i / 40.0
+		pts.append(Vector2(cos(a) * 95, sin(a) * 28) * k)
+	n.points = pts
+	n.width = 7
+	n.default_color = Game.ORANGE
 	n.position = h.global_position
 	n.z_index = -1
 	world.add_child(n)
+	turn_banner.text = Game.L("GILIRAN %s  •  AP %d", "%s'S TURN  •  AP %d") % [String(h.display_name).to_upper(), ap[h.id]]
+	turn_banner.label_settings.font_color = h.data.color
+	turn_banner.visible = true
 	var tw := n.create_tween().set_loops()
 	tw.tween_property(n, "modulate:a", 0.35, 0.5)
 	tw.tween_property(n, "modulate:a", 0.8, 0.5)

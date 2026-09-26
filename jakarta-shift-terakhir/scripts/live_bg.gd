@@ -12,10 +12,26 @@ var _base_scale := 1.0
 var zoom_extra := 0.03
 
 
+## Hanya partikel suasana (untuk arena battle).
+func setup_particles_only(style: String) -> void:
+	width = 1280.0
+	match style:
+		"sunset":
+			_motes(Color(1.0, 0.8, 0.5, 0.7), 22, Vector2(0, -12))
+		"day":
+			_leaves()
+			_motes(Color(1, 1, 0.85, 0.5), 14, Vector2(8, -6))
+		"night":
+			_motes(Color(1.0, 0.9, 0.5, 0.85), 20, Vector2(0, -20))
+			_motes(Color(1.0, 0.3, 0.6, 0.6), 10, Vector2(0, -10))
+		"rain":
+			_rain()
+
+
 static func style_for(path: String) -> String:
 	if "scbd" in path:
 		return "rain"
-	if "blok_m" in path:
+	if "blok_m" in path or "blokm" in path or "cikini_2" in path:
 		return "night"
 	if "dukuh" in path:
 		return "sunset"

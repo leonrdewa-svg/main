@@ -12,9 +12,79 @@ var _base_scale := 1.0
 var zoom_extra := 0.03
 
 
+## Efek khas tiap lokasi.
+func _place_fx(path: String) -> void:
+	if "monas" in path:
+		_flakes([Color("ffffff"), Color("f6efe1")], 10, Vector2(40, -10), 2.6, 0.6)  # burung/merpati kecil
+		_fountain(Vector2(width * 0.55, 560))
+	elif "kotatua" in path:
+		_flakes([Color("ffe8a0"), Color("f0c070")], 18, Vector2(10, 14), 1.2, 1.0)   # debu kuno berkilau
+	elif "tanahabang" in path:
+		_flakes([Color("e6186e"), Color("1f8a8a"), Color("ffd23f"), Color("e8692c"), Color("9a5ad0")], 30, Vector2(18, 40), 1.6, 1.2)  # potongan kain
+	elif "cikini" in path:
+		_flakes([Color("ff5a8a"), Color("5ae0ff"), Color("ffd23f"), Color("7dff8a")], 24, Vector2(0, -18), 1.0, 0.9)  # cipratan cat
+	elif "blokm" in path:
+		_flakes([Color("ff9a3c"), Color("ffcf60")], 26, Vector2(0, -30), 0.9, 1.0)  # asap & bara sate
+	elif "dukuh" in path:
+		_flakes([Color("ffb070"), Color("ffe0a0")], 16, Vector2(-20, 6), 1.1, 1.0)
+	elif "scbd" in path:
+		_flakes([Color("ff2a5a"), Color("5ae0ff")], 14, Vector2(0, -24), 1.0, 1.0)  # data digital
+
+
+func _flakes(cols: Array, n: int, drift: Vector2, size: float, spin: float) -> void:
+	var p := _base_particles(n, 8.0)
+	var img := Image.create(8, 5, false, Image.FORMAT_RGBA8)
+	img.fill(Color.WHITE)
+	p.texture = ImageTexture.create_from_image(img)
+	p.direction = Vector2(0, -1)
+	p.spread = 180
+	p.initial_velocity_min = 10
+	p.initial_velocity_max = 40
+	p.gravity = drift
+	p.angular_velocity_min = -160 * spin
+	p.angular_velocity_max = 160 * spin
+	p.angle_max = 360
+	p.scale_amount_min = size * 0.6
+	p.scale_amount_max = size * 1.3
+	var g := Gradient.new()
+	var offs := PackedFloat32Array()
+	var cs := PackedColorArray()
+	for i in cols.size():
+		offs.append(float(i) / maxf(1, cols.size() - 1))
+		cs.append(cols[i])
+	g.offsets = offs
+	g.colors = cs
+	p.color_initial_ramp = g
+	var fade := Gradient.new()
+	fade.offsets = PackedFloat32Array([0, 0.15, 0.85, 1])
+	fade.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 0.9), Color(1, 1, 1, 0.9), Color(1, 1, 1, 0)])
+	p.color_ramp = fade
+
+
+func _fountain(at: Vector2) -> void:
+	var p := CPUParticles2D.new()
+	p.position = at
+	p.amount = 60
+	p.lifetime = 1.4
+	p.preprocess = 1.4
+	p.texture = _dot_tex(8, 8)
+	p.direction = Vector2(0, -1)
+	p.spread = 14
+	p.initial_velocity_min = 260
+	p.initial_velocity_max = 330
+	p.gravity = Vector2(0, 420)
+	p.scale_amount_min = 0.4
+	p.scale_amount_max = 0.9
+	p.color = Color(0.8, 0.95, 1.0, 0.7)
+	p.z_index = 1
+	add_child(p)
+
+
 ## Hanya partikel suasana (untuk arena battle).
-func setup_particles_only(style: String) -> void:
+func setup_particles_only(style: String, path := "") -> void:
 	width = 1280.0
+	if path != "":
+		_place_fx(path)
 	match style:
 		"sunset":
 			_motes(Color(1.0, 0.8, 0.5, 0.7), 22, Vector2(0, -12))
@@ -84,6 +154,7 @@ func setup(path: String, style := "", extra_scale := 1.0, p_panels := 1) -> void
 			p.position = Vector2(pw * i, 0)
 			p.material = m
 			add_child(p)
+	_place_fx(path)
 	match style:
 		"sunset":
 			_motes(Color(1.0, 0.8, 0.5, 0.7), 26, Vector2(0, -12))

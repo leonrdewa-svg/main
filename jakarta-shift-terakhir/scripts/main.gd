@@ -98,6 +98,7 @@ func _world(area: String, intro := false) -> void:
 	Game.shot("dunia_" + area)
 	if intro:
 		await w.talk(Story.D.intro, "intro")
+	await _area_intro(w, area)
 	_continue_world(w, area)
 
 
@@ -124,8 +125,15 @@ func _battle(area: String, def: Dictionary, strike: String) -> void:
 		await reveal()
 		if def.has("post"):
 			await w.talk(Story.D[def.post], def.post)
-			Game.set_flag(def.card)
-			Sfx.play("sfx_star")
+			if def.has("card"):
+				Game.set_flag(def.card)
+				Sfx.play("sfx_star")
+				var bk := "beat_card%d" % Game.cards()
+				if Story.D.has(bk) and not Game.flag(bk):
+					Game.set_flag(bk)
+					await w.talk(Story.D[bk], bk)
+		else:
+			await _after_battle(w)
 		if Story.base_of(area) == "dukuh" and not Game.flag("prolog_done") and Game.area_defeated("dukuh") >= 4:
 			await w.talk(Story.D.prolog_done, "prolog_done")
 			Game.set_flag("prolog_done")
@@ -135,6 +143,29 @@ func _battle(area: String, def: Dictionary, strike: String) -> void:
 		_continue_world(w, area)
 	else:
 		await _game_over(area)
+
+
+func _area_intro(w: World, area: String) -> void:
+	var k := "intro_" + Story.base_of(area)
+	if Story.D.has(k) and not Game.flag(k):
+		Game.set_flag(k)
+		await w.talk(Story.D[k], k)
+
+
+## Adegan singkat setelah battle biasa: pekerja berterima kasih / obrolan / hadiah kecil.
+func _after_battle(w: World) -> void:
+	var n: int = Game.stats.get("ab_seq", 0)
+	Game.stats["ab_seq"] = n + 1
+	if n % 3 == 2:
+		return
+	var i: int = (n * 5 + 3) % 12
+	await w.talk(Story.D["ab_%d" % i], "ab_%d" % i)
+	if i == 3:
+		Game.money += 5000
+		w.toast("+" + Game.rp(5000))
+	elif i == 11:
+		Game.add_item("roti")
+		w.toast("+1 " + Game.T("Roti Bakar"))
 
 
 func _continue_world(w: World, area: String) -> void:

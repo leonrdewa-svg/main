@@ -31,7 +31,7 @@ func setup(bg_path: String) -> void:
 	# partikel suasana
 	var lb := LiveBg.new()
 	add_child(lb)
-	lb.setup_particles_only(style)
+	lb.setup_particles_only(style, bg_path)
 
 
 ## Ambil warna lantai dari bagian bawah gambar lokasi.

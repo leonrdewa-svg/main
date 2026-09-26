@@ -519,6 +519,64 @@ const D := {
 		["direktur_h", "", "Aku... dulu cuma ingin perusahaan ini bertahan. Lalu aku lupa semua orang punya hidup.", "I... only wanted this company to survive. Then I forgot everyone has a life.", "私は…会社を守りたかっただけだ。そして皆に人生があることを忘れた。"],
 		["raka", "normal", "Pak, besok libur. Untuk semua orang. Termasuk Bapak.", "Sir, tomorrow's a holiday. For everyone. Including you.", "明日は休みです。みんな。あなたも。"],
 	],
+	"intro_monas": [
+		["narator", "", "Monas, 19.30. Taman monumen yang biasanya ramai keluarga kini sunyi.", "Monas, 7:30 PM. The monument park, usually full of families, is silent.", "モナス、午後七時半。家族連れでにぎわう公園が、静まり返っている。"],
+		["tara", "skeptis", "Lihat, orang-orang duduk di bangku sambil ngetik laptop. Di taman.", "Look, people sitting on benches typing on laptops. In a park.", "見て、ベンチでパソコン打ってる。公園で。"],
+		["raka", "focus", "Kartu akses pertama pasti di sini. Ayo cari manajernya.", "The first access card must be here. Let's find the manager.", "最初のカードはここだ。上司を探そう。"],
+	],
+	"intro_kotatua": [
+		["narator", "", "Kota Tua. Gedung-gedung ratusan tahun berdiri diam, menyaksikan lembur yang tak ada habisnya.", "Kota Tua. Centuries-old buildings stand silent, watching endless overtime.", "コタトゥア。何百年も前の建物が、終わらない残業を黙って見ている。"],
+		["tara", "normal", "Dulu tempat ini pusat dagang. Sekarang pusat target.", "This used to be a trade center. Now it's a quota center.", "昔は商いの中心。今はノルマの中心ね。"],
+		["raka", "happy", "Tenang, kita bawa target baru: pulang jam lima.", "Relax, we're bringing a new target: home by five.", "大丈夫、新しい目標を持ってきた。五時に帰る、だ。"],
+	],
+	"intro_tanahabang": [
+		["narator", "", "Tanah Abang. Pasar kain terbesar se-Asia Tenggara, kini penuh kertas kontrak beterbangan.", "Tanah Abang. Southeast Asia's biggest textile market, now swirling with contract papers.", "タナアバン。東南アジア最大の布市場が、契約書の紙で埋まっている。"],
+		["tara", "focus", "Kontrak-kontrak ini... semuanya ditandatangani angka nol.", "These contracts... they're all signed with a zero.", "この契約書…全部ゼロで署名されてる。"],
+		["raka", "normal", "Nol lagi. Siapa sebenarnya di balik ini semua?", "Zero again. Who is really behind all this?", "またゼロか。一体誰の仕業なんだ？"],
+	],
+	"intro_blokm": [
+		["narator", "", "Blok M, 21.00. Lampu neon warung menyala, tapi kursinya kosong.", "Blok M, 9 PM. The food stalls' neon glows, but the seats are empty.", "ブロックエム、午後九時。屋台のネオンは光るのに、席は空っぽ。"],
+		["raka", "tired", "Biasanya jam segini aku makan sate di sini...", "I usually eat satay here around this time...", "いつもこの時間はここでサテを食べてるのに…"],
+		["tara", "happy", "Kalahkan manajernya dulu, nanti aku traktir.", "Beat the manager first, then it's my treat.", "上司を倒したら、おごってあげる。"],
+	],
+	"intro_cikini": [
+		["narator", "", "Cikini. Kawasan seni yang dulu penuh musik, kini hanya bunyi notifikasi.", "Cikini. The art district once full of music now only hears notifications.", "チキニ。音楽にあふれた芸術の街が、今は通知音だけ。"],
+		["tara", "skeptis", "Ting. Ting. Ting. Kepalaku sakit dengarnya.", "Ding. Ding. Ding. It's giving me a headache.", "ピコン、ピコン…頭が痛くなる。"],
+		["raka", "focus", "Sumbernya di ujung lorong kopi. Siap-siap.", "The source is at the end of the coffee lane. Get ready.", "発信源はコーヒー通りの奥だ。準備しろ。"],
+	],
+	"intro_scbd": [
+		["narator", "", "SCBD. Menara Shift menjulang, lampunya merah seperti mata yang tak pernah tidur.", "SCBD. The Shift Tower looms, its red light like an eye that never sleeps.", "エスシービーディー。シフトタワーがそびえ、赤い光は眠らない目のようだ。"],
+		["tara", "focus", "Ini dia. Akhir dari semua lembur.", "This is it. The end of all overtime.", "ここね。すべての残業の終わり。"],
+		["raka", "focus", "Kita pulang setelah ini. Janji.", "We go home after this. Promise.", "これが終わったら帰ろう。約束だ。"],
+	],
+	"beat_card1": [
+		["narator", "", "Ponsel Tara bergetar. Pesan dari nomor tak dikenal.", "Tara's phone buzzes. A message from an unknown number.", "タラの電話が震える。知らない番号からのメッセージ。"],
+		["narator", "", "\"Satu kartu tidak mengubah apa pun. Kembali bekerja.\" — D.", "\"One card changes nothing. Get back to work.\" — D.", "「カード一枚では何も変わらない。仕事に戻れ。」ディー。"],
+		["tara", "skeptis", "D? Direksi? Deadline?", "D? Directors? Deadline?", "ディー？役員？締め切り？"],
+		["raka", "focus", "Siapa pun itu, dia takut. Berarti kita di jalur yang benar.", "Whoever it is, they're scared. That means we're on the right track.", "誰だろうと、怖がってる。つまり俺たちは正しい。"],
+	],
+	"beat_card2": [
+		["bagas", "", "Raka! Tara! Kereta terakhir dari SCBD berhenti sendiri. Ada yang mengunci jalurnya dari menara.", "Raka! Tara! The last train from SCBD stopped by itself. Someone locked the line from the tower.", "ラカ、タラ！エスシービーディーの終電が止まった。塔から線路がロックされたんだ。"],
+		["tara", "focus", "Dia mau semua orang terjebak di kantor.", "He wants everyone trapped at the office.", "みんなを会社に閉じ込めるつもりね。"],
+		["raka", "focus", "Satu kartu lagi. Setelah itu, kita buka menaranya.", "One more card. Then we open the tower.", "あと一枚。そしたら塔を開けよう。"],
+	],
+	"beat_card3": [
+		["narator", "", "Tiga kartu akses bersinar bersamaan. Di kejauhan, lampu Menara Shift berkedip marah.", "The three access cards glow together. In the distance, the Shift Tower's light flickers in anger.", "三枚のカードが同時に光る。遠くでシフトタワーの光が怒ったように点滅する。"],
+		["vina", "", "Aku sudah retas lift servisnya. Masuk lewat Jalur Servis SCBD, sebelah timur lobi.", "I hacked the service elevator. Go in through the SCBD Service Lane, east of the lobby.", "業務用エレベーターをハックしたわ。ロビーの東、サービス通路から入って。"],
+		["raka", "happy", "Makasih, Vina! Ayo, Tar. Shift terakhir.", "Thanks, Vina! Let's go, Tara. The last shift.", "ありがとう、ヴィナ！行くぞタラ、最後のシフトだ。"],
+	],
+	"ab_0": [["pekerja", "", "Eh... jam berapa ini? Astaga, anakku pasti nungguin di rumah! Makasih, Mas, Mbak!", "Huh... what time is it? Oh no, my kid must be waiting at home! Thank you both!", "え…今何時？子どもが家で待ってる！ありがとう！"]],
+	"ab_1": [["karyawati", "", "Aku ingat... aku cuma mau kirim satu email lagi. Terus semuanya gelap.", "I remember... I just wanted to send one more email. Then everything went dark.", "覚えてる…もう一通メールを送ろうとしただけ。それから真っ暗に。"]],
+	"ab_2": [["tara", "happy", "Parry-mu tadi keren. Belajar dari mana?", "That parry was cool. Where'd you learn it?", "今のパリィかっこよかった。どこで覚えたの？"], ["raka", "happy", "Dari menghindari rapat mendadak tiap Jumat sore.", "From dodging surprise Friday-afternoon meetings.", "金曜夕方の突然の会議を避けてたらね。"]],
+	"ab_3": [["pekerja", "", "Ini, ambil sedikit uang. Tadinya buat beli kopi lembur. Sekarang nggak perlu lagi.", "Here, take some money. It was for overtime coffee. I don't need it anymore.", "これ、少しだけど。残業のコーヒー代だった。もう要らないよ。"]],
+	"ab_4": [["raka", "tired", "Tar, kamu nggak capek?", "Tara, aren't you tired?", "タラ、疲れてない？"], ["tara", "normal", "Capek. Tapi lebih capek lagi kalau besok harus lembur.", "I am. But I'd be more tired if we had overtime tomorrow.", "疲れてる。でも明日も残業ならもっと疲れる。"]],
+	"ab_5": [["karyawati", "", "Makasih! Aku mau langsung pulang dan tidur dua belas jam.", "Thank you! I'm going straight home to sleep twelve hours.", "ありがとう！まっすぐ帰って十二時間寝る。"]],
+	"ab_6": [["pekerja", "", "Kalian hati-hati. Monster yang lebih besar ada di ujung sana. Aku lihat bayangannya.", "Be careful. Bigger monsters are further ahead. I saw their shadows.", "気をつけて。この先にもっと大きいのがいる。影を見たんだ。"]],
+	"ab_7": [["tara", "skeptis", "Kertas-kertas ini terus muncul. Kayak revisi yang nggak ada habisnya.", "These papers keep appearing. Like endless revisions.", "紙がどんどん出てくる。終わらない修正みたい。"], ["raka", "happy", "Makanya kita yang tutup berkasnya.", "That's why we're closing the file.", "だから俺たちがファイルを閉じるんだ。"]],
+	"ab_8": [["karyawati", "", "Aku... sempat mimpi jadi mesin fotokopi. Serem banget.", "I... dreamed I was a photocopier. So creepy.", "コピー機になる夢を見た…すごく怖かった。"]],
+	"ab_9": [["pekerja", "", "Tolong sampaikan ke bosku: aku resign. Eh, jangan deh. Aku cuti aja.", "Tell my boss I quit. Wait, no. I'll just take leave.", "上司に辞めるって伝えて。いや、やっぱり休暇にする。"]],
+	"ab_10": [["raka", "focus", "Makin jauh, musuhnya makin kuat.", "The further we go, the stronger they get.", "進むほど、敵が強くなる。"], ["tara", "focus", "Jangan lupa pakai jurus elemen. Tiap monster punya kelemahan.", "Don't forget elemental skills. Every monster has a weakness.", "属性技を忘れないで。どの怪物にも弱点がある。"]],
+	"ab_11": [["karyawati", "", "Ini roti dari tasku. Kalian lebih butuh daripada aku.", "Here's bread from my bag. You need it more than me.", "カバンのパンをどうぞ。あなたたちの方が必要よ。"]],
 }
 
 

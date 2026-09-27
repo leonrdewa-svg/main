@@ -4,6 +4,7 @@ extends Control
 ## lines: [[speaker_id, mood, text], ...]  speaker_id: tara/raka/narator/<nama bebas>
 
 signal _advance
+signal line_started(who: String)
 
 var panel: Panel
 var portrait_bg: Panel
@@ -15,6 +16,7 @@ var arrow: Polygon2D
 var _typing := false
 var _skip := false
 var _active := false
+var _abort := false
 
 
 func _ready() -> void:
@@ -83,7 +85,7 @@ func _speaker(id: String, mood: String) -> Dictionary:
 		return {"name": e.name, "color": e.color, "tex": load("res://assets/sprites/core_%s.png" % id)}
 	if Game.NPCS.has(id):
 		var n: Dictionary = Game.NPCS[id]
-		return {"name": n.name, "color": n.color, "tex": load(n.tex)}
+		return {"name": n.name, "color": n.color, "tex": load(n.tex) if n.tex != "" else null}
 	return {"name": id, "color": Color("3a3440"), "tex": null}
 
 
@@ -96,11 +98,15 @@ func play(lines: Array, key := "") -> void:
 	tw.tween_property(panel, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	Sfx.play("sfx_paper", -6.0)
 	await tw.finished
+	_abort = false
 	for i in lines.size():
+		if _abort:
+			break
 		var line: Array = lines[i]
 		var txt: String = line[2]
 		if Game.lang == "en" and line.size() > 3:
 			txt = line[3]
+		line_started.emit(line[0])
 		Voice.line(key, i)
 		await _show(line[0], line[1], txt)
 	Voice.stop()
@@ -143,11 +149,22 @@ func _show(who: String, mood: String, text: String) -> void:
 	text_l.visible_characters = -1
 	_typing = false
 	arrow.visible = true
+	if _abort:
+		return
 	if Game.autoplay:
 		await get_tree().create_timer(0.5).timeout
 		return
 	await _advance
 	Sfx.play("sfx_blip", -6.0)
+
+
+## Hentikan dialog yang sedang berjalan (mis. adegan dilewati).
+func abort() -> void:
+	if not _active:
+		return
+	_abort = true
+	_skip = true
+	_advance.emit()
 
 
 func _unhandled_input(e: InputEvent) -> void:

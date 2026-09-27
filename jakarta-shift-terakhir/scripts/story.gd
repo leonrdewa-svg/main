@@ -30,8 +30,8 @@ const AREAS := {
 	"dukuh2": {"name": "Dukuh Atas · Bawah Jembatan", "name_en": "Dukuh Atas · Under the Bridge", "bg": MAPS + "dukuh_2.jpg", "music": "bgm_title", "wide": true, "lvl": 1.0,
 		"floor": [595, 700], "map": Vector2(655, 390), "west": "dukuh",
 		"npcs": [
-			{"id": "ojol_da", "who": "ojol", "sprite": W + "npc_deadline.png", "pos": Vector2(650, 630), "tint": Color(0.8, 1.1, 0.8), "talk": "da_ojol"},
-			{"id": "sinta_da", "who": "mahasiswi", "sprite": W + "npc_revisi.png", "pos": Vector2(1850, 615), "tint": Color(1.1, 0.9, 1.0), "flip": true, "talk": "da_sinta"},
+			{"id": "ojol_da", "who": "ojol", "sprite": W + "npc_side_a.png", "pos": Vector2(650, 630), "tint": Color(0.8, 1.1, 0.8), "talk": "da_ojol"},
+			{"id": "sinta_da", "who": "mahasiswi", "sprite": W + "npc_side_b.png", "pos": Vector2(1850, 615), "tint": Color(1.1, 0.9, 1.0), "flip": true, "talk": "da_sinta"},
 		],
 		"enemies": [
 			{"id": "da_4", "sprite": W + "d_revisi.png", "pos": Vector2(1150, 640), "group": ["revisi"]},
@@ -64,7 +64,7 @@ const AREAS := {
 		"npcs": [
 			{"id": "kakek", "who": "kakek", "sprite": W + "npc_lembur.png", "pos": Vector2(700, 610), "tint": Color(1.0, 0.95, 0.85), "talk": "mo_kakek"},
 			{"id": "intan", "who": "intan", "sprite": N2 + "npc_intan.png", "pos": Vector2(1850, 620), "quest": {"id": "sepeda2", "type": "bounty", "kinds": ["spam", "notif"], "n": 3, "reward": {"money": 18000, "item": "roti", "count": 2}, "ask": "q_intan_ask", "done": "q_intan_done", "after": "q_intan_after", "desc": ["Kalahkan 3 Spam/Notifikasi untuk Intan (Monas).", "Defeat 3 Spam/Notification enemies for Intan (Monas)."]}},
-			{"id": "rina", "who": "fotografer", "sprite": W + "npc_revisi.png", "pos": Vector2(3200, 615), "tint": Color(1.2, 1.0, 0.8), "flip": true, "quest": {"id": "foto", "type": "gift", "reward": {"item": "roti", "count": 2}, "done": "q_foto_done", "after": "q_foto_after"}},
+			{"id": "rina", "who": "fotografer", "sprite": W + "npc_side_b.png", "pos": Vector2(3200, 615), "tint": Color(1.2, 1.0, 0.8), "flip": true, "quest": {"id": "foto", "type": "gift", "reward": {"item": "roti", "count": 2}, "done": "q_foto_done", "after": "q_foto_after"}},
 		],
 		"enemies": [
 			{"id": "mo_5", "sprite": W + "d_revisi.png", "pos": Vector2(1300, 640), "group": ["revisi_beku", "revisi"], "tint": Color(0.7, 0.9, 1.35)},
@@ -198,7 +198,7 @@ const AREAS := {
 	"scbd": {"name": "SCBD · Lobi Menara Shift", "name_en": "SCBD · Shift Tower Lobby", "bg": MAPS + "scbd_1.jpg", "music": "bgm_boss", "wide": true, "lvl": 2.3,
 		"floor": [595, 700], "map": Vector2(980, 459), "station": Vector2(150, 610), "east": "scbd2",
 		"npcs": [
-			{"id": "ob", "who": "ob", "sprite": W + "npc_deadline.png", "pos": Vector2(500, 615), "tint": Color(0.8, 1.0, 0.8), "talk": "sc_ob"},
+			{"id": "ob", "who": "ob", "sprite": W + "npc_side_a.png", "pos": Vector2(500, 615), "tint": Color(0.8, 1.0, 0.8), "talk": "sc_ob"},
 			{"id": "dewi", "who": "sekretaris", "sprite": W + "npc_revisi.png", "pos": Vector2(1450, 610), "tint": Color(1.0, 0.8, 0.85), "quest": {"id": "idcard", "type": "fetch", "key": "id_card", "reward": {"money": 40000, "item": "kartu", "count": 1}, "ask": "q_id_ask", "done": "q_id_done", "after": "q_id_after", "desc": ["Temukan ID card Mbak Dewi yang jatuh di SCBD.", "Find Dewi's lost ID card in SCBD."]}},
 			{"id": "vina", "who": "vina", "sprite": N2 + "npc_vina.png", "pos": Vector2(2150, 610), "talk": "n_vina"},
 		],
@@ -245,17 +245,80 @@ const FREED := [
 	["Kepalaku enteng banget. Kayak habis cuti seminggu.", "My head feels so light. Like after a week of vacation.", "頭が軽い。一週間休んだみたいだ。"],
 ]
 
+## Pembukaan sinematik (dimainkan oleh Prologue sebelum masuk dunia).
+const SP := "res://assets/sprites/"
+const PROLOG := [
+	{"bg": MAPS + "dukuh_2.jpg", "style": "sunset", "mood": "dusk", "pan": [-1450.0, -1850.0], "music": "bgm_title",
+		"caption": ["JAKARTA, 17.52", "JAKARTA, 5:52 PM"], "sub": ["Kota yang tak pernah benar-benar pulang", "The city that never really goes home"],
+		"hold": 1.4, "key": "pro_1"},
+	{"bg": MAPS + "scbd_1.jpg", "style": "night", "mood": "dusk", "pan": [-820.0, -1040.0],
+		"caption": ["SCBD, 17.58", "SCBD, 5:58 PM"], "sub": ["Kantor Nusantara Tech, seberang Menara Shift", "Nusantara Tech office, across from the Shift Tower"],
+		"cast": [{"id": "pak_dedi", "tex": W + "npc_deadline.png", "x": 960.0, "y": 690.0, "h": 380.0, "delay": 0.3, "flip": true},
+			{"id": "raka", "tex": SP + "raka_idle.png", "x": 330.0, "h": 570.0},
+			{"id": "tara", "tex": SP + "tara_idle.png", "x": 640.0, "h": 545.0, "delay": 0.15}],
+		"key": "pro_2"},
+	{"mood": "alarm", "music": "bgm_boss", "sfx": "sfx_clock", "shake": true,
+		"caption": ["18.00", "6:00 PM"], "sub": ["Jam pulang... dihapus", "Quitting time... deleted"],
+		"key": "pro_3",
+		"after": {"transform": "pak_dedi", "tex": SP + "deadline.png", "h": 470.0}},
+	{"mood": "alarm", "key": "pro_4", "hold": 0.3},
+	{"bg": MAPS + "scbd_2.jpg", "style": "rain", "mood": "night", "pan": [-260.0, -700.0], "music": "bgm_title",
+		"caption": ["18.14", "6:14 PM"], "sub": ["Jalur Servis SCBD", "SCBD Service Route"],
+		"cast": [{"id": "raka", "tex": SP + "raka_idle.png", "x": 470.0, "h": 570.0},
+			{"id": "tara", "tex": SP + "tara_idle.png", "x": 820.0, "h": 545.0, "delay": 0.15}],
+		"key": "pro_5"},
+]
+
 ## Dialog: [pembicara, ekspresi, teks Indonesia, teks Inggris, suara Jepang]
 const D := {
+	"pro_1": [
+		["narator", "", "Jakarta. Sepuluh juta orang, satu mimpi yang sama setiap sore: pulang tepat waktu.", "Jakarta. Ten million people, one shared dream every evening: getting home on time.", "ジャカルタ。一千万の人々が、毎夕同じ夢を見る。定時に帰ることだ。"],
+		["narator", "", "Sebulan terakhir, hampir semua kantor memasang aplikasi baru: SHIFT+. Slogannya, \"Kerja Tanpa Batas.\"", "This past month, nearly every office installed a new app: SHIFT+. Its slogan: \"Work Without Limits.\"", "この一か月、ほとんどの会社が新しいアプリ、シフトプラスを入れた。売り文句は『限界なき労働』。"],
+		["narator", "", "Aplikasinya dikendalikan dari gedung baru di SCBD. Tak ada yang tahu siapa pemiliknya. Orang menyebutnya Menara Shift.", "It's run from a new tower in SCBD. No one knows who owns it. People call it the Shift Tower.", "アプリはエスシービーディーの新しいビルから管理されている。持ち主は誰も知らない。人々はそれをシフトタワーと呼んだ。"],
+		["narator", "", "Dan sore ini, dua karyawan biasa akan jadi satu-satunya yang berhasil pulang.", "And tonight, two ordinary employees will be the only ones who make it home.", "そして今夜、二人の平凡な社員だけが、家に帰れる唯一の人間になる。"],
+	],
+	"pro_2": [
+		["tara", "tired", "Laporan kuartal... terkirim. Aku nggak mau lihat angka lagi sampai hari Senin.", "Quarterly report... sent. I don't want to see another number until Monday.", "四半期レポート…送信完了。月曜まで数字は見たくない。"],
+		["raka", "happy", "Tas siap. Payung siap. Kartu MRT siap. Hari ini kita pulang TEPAT waktu, Tar!", "Bag ready. Umbrella ready. MRT card ready. Today we leave ON TIME, Tara!", "カバンよし、傘よし、定期券よし。今日こそ定時に帰るぞ、タラ！"],
+		["tara", "skeptis", "Kamu ngomong gitu tiap hari. Terus tiap hari Pak Dedi datang bawa \"satu revisi kecil\".", "You say that every day. And every day Mr. Dedi shows up with \"one tiny revision\".", "毎日そう言うよね。で、毎日デディさんが『ちょっとだけ修正』を持ってくる。"],
+		["pak_dedi", "", "Tara! Raka! Untung masih ketemu. Ada satu revisi kecil—", "Tara! Raka! Glad I caught you. There's one tiny revision—", "タラ！ラカ！よかった、まだいた。ちょっとだけ修正が——"],
+		["raka", "tired", "...Pak. Dua menit lagi jam enam.", "...Sir. It's two minutes to six.", "…デディさん。六時まであと二分です。"],
+		["pak_dedi", "", "Iya, iya, besok saja. Aneh... HP-ku getar terus. SHIFT+ minta update wajib katanya.", "Fine, fine, tomorrow then. Strange... my phone won't stop buzzing. SHIFT+ says there's a mandatory update.", "わかった、明日でいい。変だな…携帯が震えっぱなしだ。シフトプラスの強制アップデートだって。"],
+		["tara", "normal", "Kami berdua nggak pernah install itu, Pak. Raka bilang aplikasinya \"ribet\".", "We never installed it, sir. Raka said the app was \"too much hassle\".", "私たち、入れてないんです。ラカが『めんどくさい』って。"],
+		["raka", "happy", "Dan aku bangga.", "And I'm proud of it.", "誇りに思ってます。"],
+	],
+	"pro_3": [
+		["narator", "", "Tepat pukul 18.00, lampu Menara Shift berubah merah. Semua layar di SCBD ikut menyala merah.", "At exactly 6:00 PM, the Shift Tower's lights turn red. Every screen in SCBD glows red with it.", "午後六時ちょうど、シフトタワーの明かりが赤に変わった。エスシービーディー中の画面も赤く光る。"],
+		["suara", "", "Selamat sore, karyawan Jakarta. Terima kasih telah memasang SHIFT+.", "Good evening, workers of Jakarta. Thank you for installing SHIFT+.", "こんばんは、ジャカルタの社員諸君。シフトプラスのインストールに感謝する。"],
+		["suara", "", "Mulai detik ini, jam pulang DIHAPUS. Kalian akan bekerja... selamanya.", "As of this second, quitting time is DELETED. You will work... forever.", "この瞬間より、定時は削除された。君たちは永遠に…働き続ける。"],
+		["narator", "", "Kertas-kertas hitam menyembur dari setiap printer dan menempel di punggung para pekerja.", "Black papers burst from every printer and cling to the workers' backs.", "あらゆるプリンターから黒い紙が噴き出し、社員たちの背中に張り付いた。"],
+		["pak_dedi", "", "Satu... revisi... lagi... satu... lagi...", "One... more... revision... one... more...", "もう一つ…修正を…もう一つ…"],
+		["tara", "focus", "Pak Dedi?! Raka, lihat matanya... kosong!", "Mr. Dedi?! Raka, look at his eyes... they're empty!", "デディさん！？ラカ、目を見て…空っぽだよ！"],
+	],
+	"pro_4": [
+		["raka", "focus", "Itu bukan Pak Dedi lagi! Tar, lari dulu, mikir belakangan!", "That's not Mr. Dedi anymore! Tara, run now, think later!", "もうデディさんじゃない！タラ、まず逃げろ、考えるのは後だ！"],
+		["tara", "focus", "Lewat jalur servis! Pintu depan sudah penuh!", "Through the service route! The front doors are packed!", "搬入口から！正面はもう塞がってる！"],
+	],
+	"pro_5": [
+		["raka", "tired", "Hah... hah... Mereka semua jalan ke arah yang sama. Kayak zombie yang dipanggil balik ke kantor.", "Huff... huff... They're all walking the same way. Like zombies summoned back to the office.", "はぁ、はぁ…みんな同じ方向に歩いてる。会社に呼び戻されるゾンビみたいだ。"],
+		["tara", "normal", "Semua yang pakai SHIFT+ kena. Kita selamat cuma karena nggak pernah install.", "Everyone using SHIFT+ got hit. We're safe only because we never installed it.", "シフトプラスを使ってた人は全員やられた。私たちは入れてなかったから無事なんだ。"],
+		["raka", "happy", "Nah kan! Malas update ternyata bakat terpendam.", "See?! Being too lazy to update is a hidden talent.", "ほらな！アップデートをサボるのも才能だ。"],
+		["tara", "skeptis", "Jangan bangga dulu. Lihat layar iklan itu.", "Don't get cocky yet. Look at that billboard.", "まだ喜ばないで。あの広告の画面を見て。"],
+		["narator", "", "Di setiap layar kota, satu pesan berkedip: \"SHIFT BERIKUTNYA: 06.00. SEMUA WAJIB HADIR.\"", "On every screen in the city, one message blinks: \"NEXT SHIFT: 6:00 AM. ATTENDANCE MANDATORY.\"", "街中の画面に一つのメッセージが点滅する。『次のシフト、午前六時。全員出勤必須。』"],
+		["tara", "focus", "Kalau sampai pagi mereka belum dibebaskan... mungkin mereka nggak akan pernah pulang lagi.", "If they're not freed by morning... they might never go home again.", "朝までに解放できなかったら…みんな二度と家に帰れないかもしれない。"],
+		["raka", "focus", "Berarti kita punya waktu sampai pagi. Ke Dukuh Atas dulu. Dari sana semua jalur MRT bisa dicapai.", "Then we've got until morning. Dukuh Atas first. From there we can reach every MRT line.", "なら朝までが勝負だ。まずはドゥク・アタスへ。あそこからなら全路線に行ける。"],
+		["tara", "happy", "Oke. Shift lembur terakhir kita... tapi kali ini kita yang pegang jadwalnya.", "Okay. Our last overtime shift... but this time, we set the schedule.", "よし。最後の残業ね…でも今回は、私たちがシフトを決める。"],
+	],
 	"intro": [
-		["narator", "", "Jakarta, 18.47. Stasiun MRT Dukuh Atas. Jam pulang kantor.", "Jakarta, 6:47 PM. Dukuh Atas MRT Station. Rush hour.", "ジャカルタ、午後六時四十七分。ドゥク・アタス駅。帰宅ラッシュの時間だ。"],
-		["tara", "tired", "Akhirnya pulang. Delapan jam rapat yang harusnya cukup jadi email.", "Finally going home. Eight hours of meetings that should've been an email.", "やっと帰れる。メールで済む会議を八時間もやったよ。"],
-		["raka", "happy", "Semangat, Tar! Tinggal tap kartu, duduk, tidur sampai Blok M.", "Cheer up, Tara! Just tap in, sit down, and nap till Blok M.", "元気出せよ、タラ！カードをタッチして、ブロックエムまで寝るだけだ。"],
-		["tara", "normal", "Raka... kenapa orang-orang kantor jalannya kayak zombie?", "Raka... why are the office people walking like zombies?", "ラカ…なんで会社の人たち、ゾンビみたいに歩いてるの？"],
-		["raka", "normal", "Itu Pak Dedi dari Finance. Kok badannya dililit jam dinding?", "That's Mr. Dedi from Finance. Why is he wrapped in wall clocks?", "あれ、経理のデディさんだ。なんで時計に巻かれてるんだ？"],
-		["narator", "", "Kertas-kertas hitam beterbangan. Para pekerja di sekitar stasiun DIRASUKI LEMBUR.", "Black papers swirl through the air. The workers around the station are POSSESSED BY OVERTIME.", "黒い紙が舞い上がる。駅の周りの社員たちが、残業に取り憑かれていた。"],
-		["tara", "focus", "Kita harus bebaskan mereka. Pakai tangan kosong juga nggak apa-apa!", "We have to free them. Bare hands will do!", "みんなを解放しなきゃ。素手でもいい！"],
-		["raka", "focus", "Nggak ada yang boleh ganggu jam pulang!", "Nobody messes with quitting time!", "定時の邪魔はさせないぞ！"],
+		["narator", "", "Dukuh Atas, 18.47. Stasiun yang biasanya penuh orang pulang... kini penuh orang yang lupa caranya pulang.", "Dukuh Atas, 6:47 PM. The station usually full of commuters... is now full of people who forgot how to go home.", "ドゥク・アタス、午後六時四十七分。いつもは帰宅客であふれる駅が、今は帰り方を忘れた人々であふれている。"],
+		["bu_sari", "", "Nak! Sini, sini! Kalian masih waras? Syukurlah!", "Kids! Over here! You're still yourselves? Thank goodness!", "あんたたち！こっちこっち！正気なのかい？よかった！"],
+		["tara", "normal", "Bu Sari! Ibu juga nggak kena?", "Bu Sari! You weren't affected either?", "サリおばさん！おばさんも無事なの？"],
+		["bu_sari", "", "Ibu mah pakai HP senter, Nak. Nggak bisa install aplikasi apa-apa.", "My phone's an old flashlight phone, dear. It can't install any apps.", "おばさんの携帯は懐中電灯付きのガラケーだよ。アプリなんて入らないさ。"],
+		["bu_sari", "", "Tadi Ibu lihat sendiri. Kertas hitam itu nempel di punggung mereka. Kalau dipukul sampai lepas, orangnya sadar lagi.", "I saw it myself. Those black papers stick to their backs. Knock them loose and the person comes back to their senses.", "見たんだよ。黒い紙が背中に張り付いてる。叩いて剥がせば、正気に戻るのさ。"],
+		["raka", "normal", "Jadi... kita harus menghajar mereka supaya selamat?", "So... we have to beat them up to save them?", "つまり…助けるために殴れってこと？"],
+		["bu_sari", "", "Anggap saja pijat. Pijat yang kencang. Ibu buka warung di sini. Kalau lapar atau capek, mampir.", "Think of it as a massage. A firm one. I'll keep my stall open here. Drop by if you're hungry or tired.", "マッサージだと思いな。強めのね。おばさんはここで屋台を開けとくから、腹が減ったら寄りなさい。"],
+		["tara", "focus", "Itu... Pak Dedi! Dia ikut rombongan sampai ke sini.", "That's... Mr. Dedi! He followed the crowd all the way here.", "あれ…デディさん！群れについてここまで来たんだ。"],
+		["raka", "focus", "Oke. Kita bebaskan satu per satu. Nggak ada yang boleh ganggu jam pulang!", "Okay. We free them one by one. Nobody messes with quitting time!", "よし、一人ずつ解放するぞ。定時の邪魔はさせない！"],
 		["narator", "", "PANAH / WASD: jalan.  Z: bicara / serang duluan.  C: menu.  Dekati pekerja yang dirasuki untuk bertarung.", "ARROWS / WASD: walk.  Z: talk / strike first.  C: menu.  Approach possessed workers to fight.", "矢印キーで移動、ゼットで話す、または先制攻撃。"],
 	],
 	"satpam_da": [
@@ -264,7 +327,7 @@ const D := {
 	],
 	"prolog_done": [
 		["raka", "tired", "Hah... hah... mereka balik normal!", "Huff... huff... they're back to normal!", "はぁ、はぁ…みんな元に戻った！"],
-		["pak_dedi", "", "Kalian... makasih. Semua ini gara-gara Menara Shift di SCBD. Sejak pagi lampunya nyala merah terus.", "You two... thank you. It's all because of the Shift Tower in SCBD. Its lights have glowed red since morning.", "ありがとう…全部エスシービーディーのシフトタワーのせいだ。朝から赤く光ってる。"],
+		["pak_dedi", "", "Kalian... makasih. Maaf soal revisinya. Suara dari Menara Shift itu... masih kedengaran di kepalaku.", "You two... thank you. Sorry about the revision. That voice from the Shift Tower... I can still hear it in my head.", "ありがとう…修正の件はすまなかった。シフトタワーのあの声が…まだ頭に響いてる。"],
 		["pak_dedi", "", "Gerbangnya dikunci pakai tiga Kartu Akses. Dipegang tiga manajer yang paling parah dirasuki.", "Its gate is sealed with three Access Cards, held by the three most possessed managers.", "門は三枚のアクセスカードで封印されてる。一番ひどく取り憑かれた三人の上司が持ってるんだ。"],
 		["pak_dedi", "", "Satu di Monas, satu di Kota Tua, satu lagi di Blok M.", "One at Monas, one in Kota Tua, and one in Blok M.", "モナスに一人、コタトゥアに一人、ブロックエムに一人。"],
 		["tara", "focus", "Oke. Kumpulkan tiga kartu, lalu serbu Menara Shift.", "Okay. Collect three cards, then storm the Shift Tower.", "よし。カードを三枚集めて、シフトタワーに乗り込もう。"],

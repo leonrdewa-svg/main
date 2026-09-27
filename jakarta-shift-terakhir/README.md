@@ -16,6 +16,9 @@ Godot **4.5+** (dites 4.7) → Import `project.godot` → **F5**. Progres tersim
 
 ## Isi
 
+- **Prolog sinematik** (±5 menit): SCBD 17.58 → pukul 18.00 aplikasi SHIFT+ merasuki semua pekerja
+  → kabur lewat Jalur Servis → tiba di Dukuh Atas, bertemu Bu Sari. Tahan X / ketuk LEWATI untuk melompati.
+
 - **7 lokasi × 2 sisi = 14 area panorama**: Dukuh Atas, Monas, Kota Tua, Tanah Abang, Blok M, Cikini, SCBD.
   Jalan ke tepi layar untuk pindah sisi; papan MRT untuk pindah lokasi, istirahat & simpan.
 - **24 NPC + 10 misi sampingan** (tanda ! kuning), **20 harta tersembunyi**, 55 grup musuh + 7 bos
@@ -43,7 +46,8 @@ Godot **4.5+** (dites 4.7) → Import `project.godot` → **F5**. Progres tersim
 ```
 scripts/
   game.gd        data karakter/musuh/item, party, simpan/muat, input
-  story.gd       area, NPC, musuh, dialog
+  story.gd       area, NPC, musuh, prolog, dialog
+  prologue.gd    adegan pembuka sinematik
   main.gd        alur: judul, dunia, battle, peta, warung, ending
   world.gd       eksplorasi (pemain, Tara, NPC, musuh berkeliaran)
   walker.gd      animasi jalan 8 frame

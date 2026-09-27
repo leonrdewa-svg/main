@@ -75,7 +75,7 @@ const HEROES := {
 ## (hit merah: tidak bisa di-parry, harus DODGE).
 const M := "res://assets/mon/"
 const ENEMIES := {
-	"deadline": {"name": "Deadline", "hp": 60, "atk": 8, "spd": 11, "scale": 0.47, "color": Color("f07a1f"),
+	"deadline": {"name": "Deadline", "hp": 60, "atk": 8, "spd": 11, "scale": 0.485, "color": Color("f07a1f"),
 		"sprite": "res://assets/sprites/deadline.png", "exp": 14, "money": 7000, "npc": "npc_deadline", "weak": "listrik",
 		"quote": "Waktu tidak pernah cukup.",
 		"moves": [
@@ -83,7 +83,7 @@ const ENEMIES := {
 			{"name": "TIK-TAK-TIK", "hits": [0.6, 0.35, 0.35], "power": 0.5},
 			{"name": "Waktu Habis!", "hits": [1.1, 0.25], "power": 0.8, "heavy": [false, true]},
 		]},
-	"revisi": {"name": "Revisi", "hp": 52, "atk": 7, "spd": 13, "scale": 0.46, "color": Color("9a5ad0"),
+	"revisi": {"name": "Revisi", "hp": 52, "atk": 7, "spd": 13, "scale": 0.449, "color": Color("9a5ad0"),
 		"sprite": "res://assets/sprites/revisi.png", "exp": 14, "money": 7000, "npc": "npc_revisi", "weak": "api",
 		"quote": "Masih ada yang bisa diperbaiki kok.",
 		"moves": [
@@ -91,7 +91,7 @@ const ENEMIES := {
 			{"name": "Hujan Koreksi", "hits": [0.9, 0.2, 0.2, 0.2], "power": 0.35, "anim": "musa_1"},
 			{"name": "Revisi Final_v7", "hits": [0.5, 0.9], "power": 0.8, "heavy": [false, true]},
 		]},
-	"target": {"name": "Target", "hp": 80, "atk": 9, "spd": 8, "scale": 0.47, "color": Color("9be02a"),
+	"target": {"name": "Target", "hp": 80, "atk": 9, "spd": 8, "scale": 0.463, "color": Color("9be02a"),
 		"sprite": "res://assets/sprites/target.png", "exp": 18, "money": 10000, "npc": "npc_target", "weak": "kertas",
 		"quote": "Angka harus naik.",
 		"moves": [
@@ -99,7 +99,7 @@ const ENEMIES := {
 			{"name": "Angka Naik", "hits": [0.6, 0.45, 0.3], "power": 0.6, "anim": "musa_2"},
 			{"name": "Grafik Anjlok", "hits": [1.3], "power": 1.6, "heavy": [true]},
 		]},
-	"lembur": {"name": "Lembur", "hp": 120, "atk": 10, "spd": 9, "scale": 0.58, "color": Color("e6186e"),
+	"lembur": {"name": "Lembur", "hp": 120, "atk": 10, "spd": 9, "scale": 0.565, "color": Color("e6186e"),
 		"sprite": "res://assets/sprites/lembur.png", "exp": 32, "money": 16000, "npc": "npc_lembur", "weak": "api",
 		"quote": "Kerja masih bisa lebih banyak.",
 		"moves": [
@@ -222,6 +222,7 @@ const NPCS := {
 	"ratu": {"name": "Ratu Notifikasi", "color": Color("e6186e"), "tex": "res://assets/npc2/face_ratu.png"},
 	"direktur": {"name": "Direktur Nol", "color": Color("b08a20"), "tex": "res://assets/npc2/face_direktur.png"},
 	"direktur_h": {"name": "Pak Direktur", "color": Color("b08a20"), "tex": "res://assets/npc2/face_direktur_human.png"},
+	"suara": {"name": "Suara Menara", "color": Color("8a1030"), "tex": ""},
 	"bu_sari": {"name": "Bu Sari", "color": Color("c0392b"), "tex": "res://assets/world/face_busari.png"},
 	"pak_dedi": {"name": "Pak Dedi", "color": Color("f07a1f"), "tex": "res://assets/world/npc_deadline.png"},
 	"mbak_rani": {"name": "Mbak Rani", "color": Color("9a5ad0"), "tex": "res://assets/world/npc_revisi.png"},
@@ -230,23 +231,24 @@ const NPCS := {
 	"pekerja": {"name": "Pekerja", "color": Color("5a5068"), "tex": "res://assets/world/npc_deadline.png"},
 	"karyawati": {"name": "Karyawati", "color": Color("5a5068"), "tex": "res://assets/world/npc_revisi.png"},
 	"satpam": {"name": "Satpam", "color": Color("2c4a7a"), "tex": "res://assets/world/npc_target.png"},
-	"ojol": {"name": "Bang Ojol", "color": Color("2f8a3c"), "tex": "res://assets/world/npc_deadline.png"},
-	"mahasiswi": {"name": "Sinta", "color": Color("d0588a"), "tex": "res://assets/world/npc_revisi.png"},
+	"ojol": {"name": "Bang Ojol", "color": Color("2f8a3c"), "tex": "res://assets/world/npc_side_a.png"},
+	"mahasiswi": {"name": "Sinta", "color": Color("d0588a"), "tex": "res://assets/world/npc_side_b.png"},
 	"kopi_keliling": {"name": "Mas Kopi", "color": Color("7a4a2a"), "tex": "res://assets/world/npc_target.png"},
 	"anak": {"name": "Dimas", "color": Color("3a7ad0"), "tex": "res://assets/world/npc_deadline.png"},
 	"kakek": {"name": "Kakek Harjo", "color": Color("8a7a5a"), "tex": "res://assets/world/npc_lembur.png"},
-	"fotografer": {"name": "Rina", "color": Color("c07a2a"), "tex": "res://assets/world/npc_revisi.png"},
+	"fotografer": {"name": "Rina", "color": Color("c07a2a"), "tex": "res://assets/world/npc_side_b.png"},
 	"pemandu": {"name": "Pak Pemandu", "color": Color("5a3a8a"), "tex": "res://assets/world/npc_lembur.png"},
 	"seniman": {"name": "Bli Wayan", "color": Color("2a8a8a"), "tex": "res://assets/world/npc_target.png"},
 	"barista": {"name": "Mas Barista", "color": Color("6a4a3a"), "tex": "res://assets/world/npc_deadline.png"},
 	"pengamen": {"name": "Pengamen", "color": Color("8a2a5a"), "tex": "res://assets/world/npc_target.png"},
 	"sopir": {"name": "Pak Sopir", "color": Color("2a5a8a"), "tex": "res://assets/world/npc_lembur.png"},
-	"ob": {"name": "Mas OB", "color": Color("4a6a2a"), "tex": "res://assets/world/npc_deadline.png"},
+	"ob": {"name": "Mas OB", "color": Color("4a6a2a"), "tex": "res://assets/world/npc_side_a.png"},
 	"sekretaris": {"name": "Mbak Dewi", "color": Color("a02a4a"), "tex": "res://assets/world/npc_revisi.png"},
 }
 
 ## Terjemahan Inggris untuk teks data (nama jurus, musuh, item...).
 const EN := {
+	"Suara Menara": "Tower Voice",
 	"Tebas Komuter": "Commuter Slash", "Tusuk Deadline": "Deadline Thrust", "Pulang Tepat Waktu": "Clock Out On Time", "Payung Pelindung": "Guardian Umbrella",
 	"Sabet Revisi": "Revision Slash", "Badai Berkas": "File Storm", "Staples Presisi": "Precision Staples", "Tameng Dokumen": "Document Shield",
 	"Tebasan payung beruntun 4 kali. Combo sempurna = +1 AP.": "4 umbrella slashes. Perfect combo = +1 AP.",

@@ -209,7 +209,7 @@ func set_pose(pose: String) -> void:
 	_apply_tex(tex_attack if pose == "attack" else tex_idle)
 	if pose == "attack":
 		idle_anim = false
-		sprite.scale = Vector2.ONE * base_scale * 0.92
+		sprite.scale = Vector2.ONE * base_scale * (1.0 if is_hero else 0.92)
 		drop.scale = sprite.scale
 	elif alive:
 		idle_anim = true

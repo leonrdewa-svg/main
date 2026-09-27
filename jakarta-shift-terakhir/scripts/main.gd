@@ -84,7 +84,16 @@ func _title() -> void:
 		_world(Game.area)
 	else:
 		Game.new_run()
+		await _prologue()
 		_world("dukuh", true)
+
+
+## Adegan pembuka sinematik: SCBD 17.52 -> 18.00 (kerasukan massal) -> kabur ke Dukuh Atas.
+func _prologue() -> void:
+	var p := Prologue.new()
+	_swap(p)
+	await p.run(Story.PROLOG, dialog)
+	await cover()
 
 
 # ------------------------------------------------------------------ dunia

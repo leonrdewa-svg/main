@@ -42,7 +42,7 @@ func _apply() -> void:
 	var tex: Texture2D = strips.get(key, strips.values()[0])
 	if sprite.texture != tex:
 		sprite.texture = tex
-		sprite.offset = Vector2(0, -tex.get_height() / 2.0)
+		sprite.offset = Vector2(0, -tex.get_height() / 2.0 + 4.0)  # +4: padding outline di bawah kaki
 
 
 func face(d: String) -> void:
